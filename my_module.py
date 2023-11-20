@@ -30,8 +30,8 @@ def phi_lam_Legendre(lam, basis_dim):
     lam_transformed = 2 * lam - 1
     vec = torch.zeros(basis_dim)
     for i in range(basis_dim):
-        vec[i] = math.sqrt(2*i+1) * legendre(i)(lam_transformed)
-    return vec
+        vec[i] = math.sqrt(2*i+1) * legendre(i)(lam_transformed.cpu())
+    return vec.to(device)
 
 # this initializes with random weights. Need to either set a seed or force initialization somewhere for reproducibility.
 # automatically fits an intercept. To turn off intercept, set bias=False in nn.Linear()
@@ -69,17 +69,17 @@ def train_SGD(dataloader, model, loss_fn, optimizer, distribution='uniform', tra
     for batch, (X_train, y_train) in enumerate(dataloader):
         X_train, y_train = X_train.to(device), y_train.to(device)
 
-        rndm_lam = torch.tensor(0.5).to(device)
+        rndm_lam = torch.tensor(0.5)
         # SGD picks random regulation parameter lambda
         if distribution == 'uniform':
-            rndm_lam = torch.torch.distributions.Uniform(0, 1).sample().to(device)
+            rndm_lam = torch.torch.distributions.Uniform(0, 1).sample()
         # print(f"random lam = {rndm_lam}")
 
         # Compute predicted y_hat
         theta = model(rndm_lam)
         pred = torch.mm(X_train, theta[1:].view(-1, 1))
         if model.intercept:
-            const = torch.ones(len(X_train), 1)
+            const = torch.ones(len(X_train), 1).to(device)
             pred += torch.mm(const, theta[0].view(-1, 1))
         pred = actv(pred)
         # print(theta[0])
