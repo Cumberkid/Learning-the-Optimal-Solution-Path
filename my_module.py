@@ -30,7 +30,7 @@ def phi_lam_Legendre(lam, basis_dim):
     lam_transformed = 2 * lam - 1
     vec = torch.zeros(basis_dim)
     for i in range(basis_dim):
-        vec[i] = math.sqrt(2*i+1) * legendre(i)(lam_transformed.cpu())
+        vec[i] = math.sqrt(2*i+1) * legendre(i)(lam_transformed)
     return vec.to(device)
 
 # this initializes with random weights. Need to either set a seed or force initialization somewhere for reproducibility.
@@ -71,7 +71,7 @@ def train_SGD(dataloader, model, loss_fn, optimizer, distribution='uniform', tra
         # print(f"random lam = {rndm_lam}")
 
         # Compute predicted y_hat
-        theta = model(rndm_lam)
+        theta = model(rndm_lam.cpu())
         pred = torch.mm(X_train, theta[1:].view(-1, 1))
         if model.intercept:
             const = torch.ones(len(X_train), 1).to(device)
