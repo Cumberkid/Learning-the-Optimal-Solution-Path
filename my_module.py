@@ -41,7 +41,6 @@ class Basis_TF_SGD(nn.Module):
         self.feature_dim = feature_dim
         self.basis_dim = basis_dim
         self.linear = nn.Linear(self.basis_dim, self.feature_dim + 1, bias=False)
-        # self.actv = nn.Sigmoid()
         self.basis_fn = basis_fn
         self.intercept = intercept
 
@@ -51,16 +50,12 @@ class Basis_TF_SGD(nn.Module):
               self.linear.weight.copy_(init_weight)
           else:
               self.linear.weight.data.fill_(0)
-          # print(self.linear.weight)
 
     # model takes input lambda and outputs theta
     def forward(self, lam):
         phi = self.basis_fn(lam, self.basis_dim)
-        # torch.mm(x, phi)
         return self.linear(phi)
 
-    # def ridge_term(self):
-    #     return self.linear.weight.norm(p=2)**2 + self.linear.bias.norm(p=2)**2
 
 # trace_frequency is measured in number of batches. -1 means don't print
 def train_SGD(dataloader, model, loss_fn, optimizer, distribution='uniform', trace_frequency=-1):
