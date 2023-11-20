@@ -101,12 +101,13 @@ def test(dataloader, model, loss_fn, lam):
             pred = model(X_test)
 
             oos = (1 - lam) * loss_fn(pred.view(-1, 1), y_test.view(-1, 1))
-            oos += model.reg_param * 0.5 * model.ridge_term()
+            oos += lam * 0.5 * model.ridge_term()
 
     return oos.item()
+    
+
 
 #A silly synthetic data example
-#generating data in numpy for now
 def gen_data(n_obs_1, n_obs_2, n_var):
     # Draw X randomly
     data_1 = np.random.multivariate_normal(
