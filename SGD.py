@@ -115,7 +115,7 @@ def get_losses_SGD(model, lam_min, lam_max, num_grid, data_loader, criterion):
     lambdas = torch.arange(lam_max, lam_min, (-1)*delta_lam)
     losses = []
     for lam in lambdas:
-        losses.append(my_module.test_SGD(data_loader, model, criterion, lam))
+        losses.append(test_SGD(data_loader, model, criterion, lam))
 
     return losses
 
@@ -128,7 +128,7 @@ def get_sup_error_SGD(lam_min, lam_max, true_loss_list, model, data_loader, crit
         exact_soln = true_loss_list[i]
         temp = 1 - i * fine_delta_lam
         # approximate solution uses the linear weight of coarse grid model to test for regression parameter of the fine grid
-        approx_soln = my_module.test_SGD(data_loader, model, criterion, temp)
+        approx_soln = test_SGD(data_loader, model, criterion, temp)
         sup_error = torch.max(torch.tensor([sup_error, approx_soln - exact_soln]))
         # print(sup_error)
     return sup_error.item()
