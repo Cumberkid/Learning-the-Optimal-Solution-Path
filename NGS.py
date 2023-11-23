@@ -128,6 +128,7 @@ def GD_on_a_grid(lam, epochs, weight, trainDataLoader, data_input_dim,
             i -= 1
             i.int()
         exact_soln = true_loss_list[i]
+        lam = 1 - i * fine_delta_lam
         # print(i)
 
     early_stop = False
