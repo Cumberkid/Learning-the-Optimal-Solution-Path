@@ -113,10 +113,9 @@ def test(dataloader, model, loss_fn, lam):
 """# Naive Grid Search"""
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
-def GD_on_a_grid(lam, epochs, weight, trainDataLoader, data_input_dim,
+def GD_on_a_grid(lam, epochs, weight, loss_fn, trainDataLoader, data_input_dim,
                  lr=1e-3, alpha=1, SGD=False, testDataLoader=None,
                  true_loss_list=None, fine_delta_lam=None, stopping_criterion=None):
-    criterion=torch.nn.BCELoss()
     model = Logistic_Regression(data_input_dim, 1, lam, weight).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
     optimizer.zero_grad()
@@ -136,14 +135,14 @@ def GD_on_a_grid(lam, epochs, weight, trainDataLoader, data_input_dim,
     for t in range(epochs):
         if SGD:
             # shrink learning rate
-            lr = torch.min(torch.tensor([0.1, alpha/(t+1)]))
+            lr = torch.min(torch.tensor([0.01, alpha/(t+1)]))
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
-        train(trainDataLoader, model, criterion, optimizer, trace_frequency=5)
+        train(trainDataLoader, model, loss_fn, optimizer, trace_frequency=5)
         if true_loss_list is not None:
             if (t+1) % 10 == 0:
                 # do an accuracy check
-                approx_soln = test(testDataLoader, model, criterion, lam)
+                approx_soln = test(testDataLoader, model, loss_fn, lam)
                 error = approx_soln - exact_soln
                 # stopping criterion
                 if error <= stopping_criterion:
@@ -161,7 +160,7 @@ def GD_on_a_grid(lam, epochs, weight, trainDataLoader, data_input_dim,
 # do the whole naive grid search over a list of uniformly spaced lambda's
 # from lam_min to lam_max
 # returns a list of trained models
-def naive_grid_search(lam_min, lam_max, num_grid, epochs, trainDataLoader,
+def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
                       data_input_dim, lr=0.5**4, alpha=4, SGD=False,
                       testDataLoader=None, true_loss_list=None, stopping_criterion=None):
     delta_lam = (lam_max - lam_min)/num_grid
@@ -178,7 +177,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, trainDataLoader,
 
     for lam in lambdas:
         # print(f"Running model on lambda = {lam}")
-        model, itr = GD_on_a_grid(lam, epochs, weight,
+        model, itr = GD_on_a_grid(lam, epochs, weight, loss_fn,
                                   trainDataLoader=trainDataLoader,
                                   data_input_dim=data_input_dim,
                                   lr=lr, alpha=alpha,
