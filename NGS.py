@@ -135,7 +135,7 @@ def GD_on_a_grid(lam, epochs, weight, loss_fn, trainDataLoader, data_input_dim,
     for t in range(epochs):
         if SGD:
             # shrink learning rate
-            lr = torch.min(torch.tensor([0.01, alpha/(t+1)]))
+            lr = torch.min(torch.tensor([0.1, alpha/(t+1)]))
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
         train(trainDataLoader, model, loss_fn, optimizer, trace_frequency=5)
@@ -161,7 +161,7 @@ def GD_on_a_grid(lam, epochs, weight, loss_fn, trainDataLoader, data_input_dim,
 # from lam_min to lam_max
 # returns a list of trained models
 def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
-                      data_input_dim, lr=0.5**4, alpha=4, SGD=False,
+                      data_input_dim, lr=1e-3, alpha=1, SGD=False,
                       testDataLoader=None, true_loss_list=None, stopping_criterion=None):
     delta_lam = (lam_max - lam_min)/num_grid
     fine_delta_lam = None
