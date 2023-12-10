@@ -128,6 +128,7 @@ def GD_on_a_grid(lam, epochs, weight, loss_fn, trainDataLoader, data_input_dim,
             i.int()
         exact_soln = true_loss_list[i]
         lam = 1 - i * fine_delta_lam
+        model.reg_param = lam
         # print(i)
 
     early_stop = False
@@ -206,16 +207,21 @@ def get_sup_error(lam_min, lam_max, true_loss_list, coarse_model_list, data_load
     delta_lam = torch.tensor((lam_max - lam_min)/len(coarse_model_list))
     # check sup error
     sup_error = 0
+    coarse_grid = 0
     for i in range(len(true_loss_list)):
         true_loss = true_loss_list[i]
-        coarse_grid = torch.round(i * fine_delta_lam / delta_lam).int()
-        if coarse_grid >= len(coarse_model_list):
-            coarse_grid -= 1
-            coarse_grid.int()
+        
+        # coarse_grid = torch.round(i * fine_delta_lam / delta_lam).int()
+        # if coarse_grid >= len(coarse_model_list):
+        #     coarse_grid -= 1
+        #     coarse_grid.int()
         # print(i, coarse_grid)
-        temp = 1 - i * fine_delta_lam
+        lam = 1 - i * fine_delta_lam
+        if (coarse_grid + 1) < len(coarse_model_list):
+            if (coarse_model_list[coarse_grid].reg_param - lam) >= (lam - coarse_model_list[coarse_grid + 1]):
+                coarse_grid += 1
         # approximate solution uses the linear weight of coarse grid model to test for regression parameter of the fine grid
-        approx_loss = test(data_loader, coarse_model_list[coarse_grid], criterion, temp)
+        approx_loss = test(data_loader, coarse_model_list[coarse_grid], criterion, lam)
         sup_error = torch.max(torch.tensor([sup_error, approx_loss - true_loss]))
         # print(i, coarse_grid, sup_error)
     return sup_error.item()
