@@ -202,7 +202,7 @@ def get_losses(lam_min, lam_max, fine_delta_lam, coarse_model_list, data_loader,
     i = 0
     while True:
         lam = lam_max - i * fine_delta_lam
-        if lam < lam_min:
+        if lam <= lam_min:
             break
         if (coarse_grid + 1) < len(coarse_model_list):
             if (coarse_model_list[coarse_grid].reg_param - lam) > (lam - coarse_model_list[coarse_grid + 1].reg_param):
@@ -215,18 +215,8 @@ def get_losses(lam_min, lam_max, fine_delta_lam, coarse_model_list, data_loader,
 
 def get_errs(lam_min, lam_max, true_loss_list, coarse_model_list, data_loader, criterion):
     fine_delta_lam = torch.tensor((lam_max - lam_min)/len(true_loss_list))
-    # check sup error
-    errs = []
-    coarse_grid = 0
-    for i in range(len(true_loss_list)):
-        true_loss = true_loss_list[i]
-        lam = lam_max - i * fine_delta_lam
-        if (coarse_grid + 1) < len(coarse_model_list):
-            if (coarse_model_list[coarse_grid].reg_param - lam) > (lam - coarse_model_list[coarse_grid + 1].reg_param):
-                coarse_grid += 1
-        # approximate solution uses the linear weight of coarse grid model to test for regression parameter of the fine grid
-        approx_loss = test(data_loader, coarse_model_list[coarse_grid], criterion, lam)
-        errs.append(approx_loss - true_loss)
+    losses = get_losses(lam_min, lam_max, fine_delta_lam, coarse_model_list, data_loader, criterion)
+    errs = losses - true_loss_list
     return errs
 
 def get_sup_error(lam_min, lam_max, true_loss_list, coarse_model_list, data_loader, criterion):
