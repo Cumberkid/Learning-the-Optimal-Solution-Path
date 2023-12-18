@@ -113,7 +113,7 @@ def test(dataloader, model, loss_fn, lam):
 """# Naive Grid Search"""
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
-def GD_on_a_grid(lam, epochs, weight, loss_fn, trainDataLoader, data_input_dim,
+def GD_on_a_grid(lam, lam_max, epochs, weight, loss_fn, trainDataLoader, data_input_dim,
                  lr=1e-3, alpha=1, SGD=False, testDataLoader=None,
                  true_loss_list=None, fine_delta_lam=None, stopping_criterion=None):
     model = Logistic_Regression(data_input_dim, 1, lam, weight).to(device)
@@ -121,13 +121,13 @@ def GD_on_a_grid(lam, epochs, weight, loss_fn, trainDataLoader, data_input_dim,
     optimizer.zero_grad()
 
     if true_loss_list is not None:
-        # exact solution
-        i = torch.round((1-lam) / fine_delta_lam).int()
+        # true loss
+        i = round((lam_max - lam) / fine_delta_lam).int()
         if i >= len(true_loss_list):
             i -= 1
             i.int()
-        exact_soln = true_loss_list[i]
-        lam = 1 - i * fine_delta_lam
+        true_loss = true_loss_list[i]
+        lam = lam_max - i * fine_delta_lam
         model.reg_param = lam
         # print(i)
 
@@ -143,8 +143,8 @@ def GD_on_a_grid(lam, epochs, weight, loss_fn, trainDataLoader, data_input_dim,
         if true_loss_list is not None:
             if (t+1) % 10 == 0:
                 # do an accuracy check
-                approx_soln = test(testDataLoader, model, loss_fn, lam)
-                error = approx_soln - exact_soln
+                approx_loss = test(testDataLoader, model, loss_fn, lam)
+                error = approx_loss - true_loss
                 # stopping criterion
                 if error <= stopping_criterion:
                     itr += (t+1)
@@ -178,7 +178,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
 
     for lam in lambdas:
         # print(f"Running model on lambda = {lam}")
-        model, itr = GD_on_a_grid(lam, epochs, weight, loss_fn,
+        model, itr = GD_on_a_grid(lam, lam_max, epochs, weight, loss_fn,
                                   trainDataLoader=trainDataLoader,
                                   data_input_dim=data_input_dim,
                                   lr=lr, alpha=alpha,
@@ -214,13 +214,13 @@ def get_losses(lam_min, lam_max, fine_delta_lam, coarse_model_list, data_loader,
     return losses
 
 def get_errs(lam_min, lam_max, true_loss_list, coarse_model_list, data_loader, criterion):
-    fine_delta_lam = torch.tensor((lam_max - lam_min)/len(true_loss_list))
+    fine_delta_lam = (lam_max - lam_min)/len(true_loss_list)
     losses = get_losses(lam_min, lam_max, fine_delta_lam, coarse_model_list, data_loader, criterion)
     errs = losses - true_loss_list
     return errs
 
 def get_sup_error(lam_min, lam_max, true_loss_list, coarse_model_list, data_loader, criterion):
-    fine_delta_lam = torch.tensor((lam_max - lam_min)/len(true_loss_list))
+    fine_delta_lam = (lam_max - lam_min)/len(true_loss_list)
     # delta_lam = torch.tensor((lam_max - lam_min)/len(coarse_model_list))
     # check sup error
     sup_error = 0
@@ -228,7 +228,7 @@ def get_sup_error(lam_min, lam_max, true_loss_list, coarse_model_list, data_load
     for i in range(len(true_loss_list)):
         true_loss = true_loss_list[i]
         
-        # coarse_grid = torch.round(i * fine_delta_lam / delta_lam).int()
+        # coarse_grid = round(i * fine_delta_lam / delta_lam).int()
         # if coarse_grid >= len(coarse_model_list):
         #     coarse_grid -= 1
         #     coarse_grid.int()
