@@ -122,7 +122,7 @@ def GD_on_a_grid(lam, lam_max, epochs, weight, loss_fn, trainDataLoader, data_in
 
     if true_loss_list is not None:
         # true loss
-        i = round((lam_max - lam) / fine_delta_lam).int()
+        i = torch.round((lam_max - lam) / fine_delta_lam).int()
         if i >= len(true_loss_list):
             i -= 1
             i.int()
@@ -228,7 +228,7 @@ def get_sup_error(lam_min, lam_max, true_loss_list, coarse_model_list, data_load
     for i in range(len(true_loss_list)):
         true_loss = true_loss_list[i]
         
-        # coarse_grid = round(i * fine_delta_lam / delta_lam).int()
+        # coarse_grid = torch.round(i * fine_delta_lam / delta_lam).int()
         # if coarse_grid >= len(coarse_model_list):
         #     coarse_grid -= 1
         #     coarse_grid.int()
@@ -239,6 +239,6 @@ def get_sup_error(lam_min, lam_max, true_loss_list, coarse_model_list, data_load
                 coarse_grid += 1
         # approximate solution uses the linear weight of coarse grid model to test for regression parameter of the fine grid
         approx_loss = test(data_loader, coarse_model_list[coarse_grid], criterion, lam)
-        sup_error = max(sup_error, approx_loss - true_loss)
+        sup_error = torch.max(torch.tensor([sup_error, approx_loss - true_loss]))
         # print(i, coarse_grid, sup_error)
     return sup_error.item()
