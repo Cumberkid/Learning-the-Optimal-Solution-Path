@@ -178,7 +178,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     weight = torch.zeros(data_input_dim)
 
     for lam in lambdas:
-        print(f"Running model on lambda = {lam}")
+        # print(f"Running model on lambda = {lam}")
         model, itr = GD_on_a_grid(lam, lam_max, epochs, weight, loss_fn,
                                   trainDataLoader=trainDataLoader,
                                   data_input_dim=data_input_dim,
