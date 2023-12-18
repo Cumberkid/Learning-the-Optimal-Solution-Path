@@ -172,7 +172,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     total_itr = 0
     # create a list of lambda's
     lambdas = torch.arange(lam_max, lam_min, (-1)*delta_lam)
-    lambdas = torch.cat((lambdas, torch.tensor(lam_min)), dim=0).to(device)
+    lambdas = torch.cat((lambdas, torch.tensor(lam_min).unsqueeze(0)), dim=0).to(device)
 
     # first weight is initialized at 0
     weight = torch.zeros(data_input_dim)
