@@ -171,7 +171,8 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     model_list = []
     total_itr = 0
     # create a list of lambda's
-    lambdas = torch.arange(lam_max, lam_min, (-1)*delta_lam).to(device)
+    lambdas = torch.arange(lam_max, lam_min, (-1)*delta_lam)
+    lambdas = torch.cat((lambdas, torch.tensor(lam_min)), dim=0).to(device)
 
     # first weight is initialized at 0
     weight = torch.zeros(data_input_dim)
@@ -202,7 +203,7 @@ def get_losses(lam_min, lam_max, fine_delta_lam, coarse_model_list, data_loader,
     i = 0
     while True:
         lam = lam_max - i * fine_delta_lam
-        if lam <= lam_min:
+        if lam < lam_min:
             break
         if (coarse_grid + 1) < len(coarse_model_list):
             if (coarse_model_list[coarse_grid].reg_param - lam) > (lam - coarse_model_list[coarse_grid + 1].reg_param):
