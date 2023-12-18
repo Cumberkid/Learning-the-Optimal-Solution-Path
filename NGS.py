@@ -167,7 +167,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     delta_lam = (lam_max - lam_min)/num_grid
     fine_delta_lam = None
     if true_loss_list is not None:
-        fine_delta_lam = (lam_max - lam_min)/len(true_loss_list)
+        fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list)-1)
     model_list = []
     total_itr = 0
     # create a list of lambda's
@@ -178,7 +178,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     weight = torch.zeros(data_input_dim)
 
     for lam in lambdas:
-        # print(f"Running model on lambda = {lam}")
+        print(f"Running model on lambda = {lam}")
         model, itr = GD_on_a_grid(lam, lam_max, epochs, weight, loss_fn,
                                   trainDataLoader=trainDataLoader,
                                   data_input_dim=data_input_dim,
@@ -215,13 +215,13 @@ def get_losses(lam_min, lam_max, fine_delta_lam, coarse_model_list, data_loader,
     return losses
 
 def get_errs(lam_min, lam_max, true_loss_list, coarse_model_list, data_loader, criterion):
-    fine_delta_lam = (lam_max - lam_min)/len(true_loss_list)
+    fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list)-1)
     losses = get_losses(lam_min, lam_max, fine_delta_lam, coarse_model_list, data_loader, criterion)
     errs = losses - true_loss_list
     return errs
 
 def get_sup_error(lam_min, lam_max, true_loss_list, coarse_model_list, data_loader, criterion):
-    fine_delta_lam = (lam_max - lam_min)/len(true_loss_list)
+    fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list)-1)
     # delta_lam = torch.tensor((lam_max - lam_min)/len(coarse_model_list))
     # check sup error
     sup_error = 0
