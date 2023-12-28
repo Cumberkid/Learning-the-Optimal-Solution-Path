@@ -26,26 +26,10 @@ print(f"Using device: {device}")
 
 """# Running Logistic Regression Through Tourch NN"""
 
-#Prep data for Pytorch Dataloader
-class Regression_Data(Dataset):
-    def __init__(self, X, y):
-        self.X = X  if isinstance(X, torch.Tensor) else torch.FloatTensor(X)
-        self.y = y  if isinstance(y, torch.Tensor) else torch.FloatTensor(y)
-        self.input_dim = self.X.shape[1]
-
-    def __len__(self):
-        return self.X.shape[0]
-
-    def __getitem__(self, idx):
-        return self.X[idx,:], self.y[idx]
-
-    def get_y(self):
-        return self.y
-
 # this initializes with random weights. Need to either set a seed or force initialization somewhere for reproducibility.
 # automatically fits an intercept. To turn off intercept, set bias=False in nn.Linear()
 class Logistic_Regression(nn.Module):
-    def __init__(self, input_dim, output_dim, reg_param, init_weight):
+    def __init__(self, input_dim, output_dim, reg_param, init_weight, init_intercept):
         super(Logistic_Regression, self).__init__()
         self.linear = nn.Linear(input_dim, output_dim, bias=True)
         self.actv = nn.Sigmoid()
@@ -54,7 +38,7 @@ class Logistic_Regression(nn.Module):
         # initialize for better performance
         with torch.no_grad():
           self.linear.weight.copy_(init_weight)
-          self.linear.bias.data.fill_(0)
+          self.linear.bias.data.fill_(init_intercept)
 
     def forward(self, x):
         return self.actv(self.linear(x))
@@ -113,35 +97,30 @@ def test(dataloader, model, loss_fn, lam):
 """# Naive Grid Search"""
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
-def GD_on_a_grid(lam, lam_max, epochs, weight, intercept, loss_fn, trainDataLoader, data_input_dim,
-                 lr=1e-3, alpha=1, SGD=False, testDataLoader=None,
+def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoader, data_input_dim,
+                 alpha=1, SGD=False, testDataLoader=None,
                  true_loss_list=None, fine_delta_lam=None, stopping_criterion=None):
-    model = Logistic_Regression(data_input_dim, 1, lam, weight).to(device)
-    with torch.no_grad():
-        model.linear.bias.copy_(intercept)
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
-    optimizer.zero_grad()
 
     if true_loss_list is not None:
         # true loss
-        i = torch.round((lam_max - lam) / fine_delta_lam).int()
+        i = round((lam_max - lam) / fine_delta_lam)
         if i >= len(true_loss_list):
             i = len(true_loss_list) - 1
-            i.int()
         true_loss = true_loss_list[i]
         lam = lam_max - i * fine_delta_lam
-        model.reg_param = lam
         # print(f"nearest i = {i}\t lam = {lam}")
-
+        
+    model.reg_param = lam
+    
     early_stop = False
     itr = 0
     for t in range(epochs):
         if SGD:
             # shrink learning rate
-            lr = torch.min(torch.tensor([0.1, alpha/(t+1)]))
+            lr = min([0.1, alpha/(t+1)])
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
-        train(trainDataLoader, model, loss_fn, optimizer, trace_frequency=5)
+        train(trainDataLoader, model, loss_fn, optimizer)
         if true_loss_list is not None:
             if (t+1) % 10 == 0:
                 # do an accuracy check
@@ -156,7 +135,7 @@ def GD_on_a_grid(lam, lam_max, epochs, weight, intercept, loss_fn, trainDataLoad
     if not early_stop:
         itr += epochs
 
-    return model, itr
+    return itr
 
 """Naive Grid Search starts from $\lambda = 1$ and decreases $\lambda$ by $\Delta\lambda = \frac{\lambda_\text{max} - \lambda_\text{min}}{\text{# of grid}}$. The model trained on each grid point $(\lambda - \Delta\lambda)$ initializes weight with the linear weight of the model trained on the previous grid point $\lambda$."""
 
@@ -166,78 +145,78 @@ def GD_on_a_grid(lam, lam_max, epochs, weight, intercept, loss_fn, trainDataLoad
 def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
                       data_input_dim, lr=1e-3, alpha=1, SGD=False,
                       testDataLoader=None, true_loss_list=None, stopping_criterion=None):
-    delta_lam = (lam_max - lam_min)/num_grid
     fine_delta_lam = None
     if true_loss_list is not None:
-        fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list)-1)
-    model_list = []
+        fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list) - 1)
+        
+    reg_params = []
+    weights = []
+    intercepts = []
     total_itr = 0
     # create a list of lambda's
-    lambdas = torch.arange(lam_max, lam_min, (-1)*delta_lam)
-    lambdas = torch.cat((lambdas, torch.tensor(lam_min).unsqueeze(0)), dim=0).to(device)
+    lambdas = np.linspace(lam_max, lam_min, num_grid)
 
     # first weight is initialized at 0
     weight = torch.zeros(data_input_dim)
-    intercept = torch.tensor(0)
+    intercept = 0
+    
+    model = Logistic_Regression(data_input_dim, 1, lam_max, weight, intercept).to(device)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    optimizer.zero_grad()
 
     for lam in lambdas:
         # print(f"Running model on lambda = {lam}")
-        model, itr = GD_on_a_grid(lam, lam_max, epochs, weight, intercept, loss_fn,
+        itr = GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer,
                                   trainDataLoader=trainDataLoader,
                                   data_input_dim=data_input_dim,
-                                  lr=lr, alpha=alpha,
-                                  SGD=SGD, testDataLoader=testDataLoader,
+                                  alpha=alpha, SGD=SGD, 
+                                  testDataLoader=testDataLoader,
                                   true_loss_list=true_loss_list,
                                   fine_delta_lam=fine_delta_lam,
                                   stopping_criterion=stopping_criterion)
-        weight = model.linear.weight
-        intercept = model.linear.bias
-        model_list.append(model)
+        weights.append(model.linear.weight.clone().data.cpu().numpy()[0])
+        intercepts.append(model.linear.bias.clone().data.cpu().numpy()[0])
+        # print(model.linear.weight)
+        reg_params.append(model.reg_param)
         total_itr += itr
         # print(total_itr)
 
-    return model_list, total_itr
+    return total_itr, reg_params, intercepts, weights
 
-"""Helper function that takes in a list of coarse grid models and returns the sup error over $\lambda\in[0,1]$ compared to the exact solutions."""
+"""Helper function that takes in a list of coarse grid models and returns the simulated losses and errors over $\lambda\in[0,1]$ compared to the exact solutions."""
+# return the simulated losses accross the solution path
+def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, reg_params, data_loader, criterion):
     
-def get_losses(lam_min, lam_max, fine_delta_lam, coarse_model_list, data_loader, criterion):
-    # check sup error
     losses = []
     coarse_grid = 0
-    i = 0
-    while True:
-        lam = lam_max - i * fine_delta_lam
-        if lam < lam_min:
-            break
-        if (coarse_grid + 1) < len(coarse_model_list):
-            if (coarse_model_list[coarse_grid].reg_param - lam) > (lam - coarse_model_list[coarse_grid + 1].reg_param):
+    weight = torch.tensor(weights[coarse_grid])
+    intercept = intercepts[coarse_grid]
+    reg_param = reg_params[coarse_grid]
+    model = Logistic_Regression(len(weight), 1, reg_param, weight, intercept).to(device)
+    
+    lam = lam_max
+    while lam >= lam_min:
+        if (coarse_grid + 1) < len(reg_params):
+            if (reg_params[coarse_grid] - lam) > (lam - reg_params[coarse_grid + 1]):
                 coarse_grid += 1
+                model.reg_param = reg_params[coarse_grid]
+                with torch.no_grad():
+                    model.linear.weight.copy_(torch.tensor(weights[coarse_grid]))
+                    model.linear.bias.data.fill_(intercepts[coarse_grid])
         # approximate solution uses the linear weight of coarse grid model to test for regression parameter of the fine grid
-        approx_loss = test(data_loader, coarse_model_list[coarse_grid], criterion, lam)
+        approx_loss = test(data_loader, model, criterion, lam)
         losses.append(approx_loss)
-        i += 1
+        lam -= fine_delta_lam
     return losses
 
-def get_errs(lam_min, lam_max, true_loss_list, coarse_model_list, data_loader, criterion):
+# return the absolute errors compared to the true loss accross the solution path
+def get_errs(lam_min, lam_max, true_loss_list, intercepts, weights, reg_params, data_loader, criterion):
     fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list)-1)
-    losses = get_losses(lam_min, lam_max, fine_delta_lam, coarse_model_list, data_loader, criterion)
+    losses = get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, reg_params, data_loader, criterion)
     errs = losses - true_loss_list
     return errs
 
-def get_sup_error(lam_min, lam_max, true_loss_list, coarse_model_list, data_loader, criterion):
-    fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list)-1)
-    # check sup error
-    sup_error = 0
-    coarse_grid = 0
-    for i in range(len(true_loss_list)):
-        true_loss = true_loss_list[i]
-        lam = lam_max - i * fine_delta_lam
-        if (coarse_grid + 1) < len(coarse_model_list):
-            if (coarse_model_list[coarse_grid].reg_param - lam) > (lam - coarse_model_list[coarse_grid + 1].reg_param):
-                coarse_grid += 1
-        # approximate solution uses the linear weight of coarse grid model to test for regression parameter of the fine grid
-        approx_loss = test(data_loader, coarse_model_list[coarse_grid], criterion, lam)
-        sup_error = torch.max(torch.tensor([sup_error, approx_loss - true_loss]))
-        if i > 1015:
-            print(f"i = {i}\t lam = {lam}\t nearest grid = {coarse_grid}\t nearest lam = {coarse_model_list[coarse_grid].reg_param}\t sup error = {sup_error}")
-    return sup_error.item()
+# return the supremum absolute error compared to the true loss accross the solution path
+def get_sup_error(lam_min, lam_max, true_loss_list, intercepts, weights, reg_params, data_loader, criterion):
+    errs = get_errs(lam_min, lam_max, true_loss_list, intercepts, weights, reg_params, data_loader, criterion)
+    return max(errs)
