@@ -141,7 +141,7 @@ def fair_train_SGD(dataloader, model, loss_fn, optimizer, distribution='uniform'
             
         # fair loss function
         loss = (1 - rndm_lam) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1)) 
-        + rndm_lam * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+        loss += rndm_lam * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
                 
         # backpropagation
         optimizer.zero_grad()
@@ -171,7 +171,7 @@ def fair_test_SGD(dataloader, model, loss_fn, lam):
             # print(f"prediction = {pred}")
             
             oos = (1 - lam) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1)) 
-            + lam * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+            oos += lam * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
                     
     return oos.item()
     

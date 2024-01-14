@@ -138,7 +138,7 @@ def fair_train(dataloader, model, loss_fn, optimizer, trace_frequency = -1):
         
         # Fair loss function
         loss = (1 - model.fair_param) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1))
-        + model.fair_param * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+        loss += model.fair_param * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
                 
         # Backpropagation
         optimizer.zero_grad()
@@ -169,7 +169,7 @@ def fair_test(dataloader, model, loss_fn, lam):
             
             # With regularization
             oos = (1 - model.fair_param) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1)) 
-            + model.fair_param * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+            oos += model.fair_param * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
                     
     return oos.item()
 
