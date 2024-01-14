@@ -50,7 +50,7 @@ class Basis_TF_SGD(nn.Module):
               self.linear.weight.copy_(init_weight)
           else:
               self.linear.weight.data.fill_(0)
-
+              
     # model takes input lambda and outputs theta
     def forward(self, lam):
         phi = self.basis_fn(lam, self.basis_dim)
@@ -63,13 +63,13 @@ def train_SGD(dataloader, model, loss_fn, optimizer, distribution='uniform', tra
     actv = nn.Sigmoid()
     for batch, (X_train, y_train) in enumerate(dataloader):
         X_train, y_train = X_train.to(device), y_train.to(device)
-
+        
         rndm_lam = torch.tensor(0.5)
         # SGD picks random regulation parameter lambda
         if distribution == 'uniform':
             rndm_lam = torch.torch.distributions.Uniform(0, 1).sample()
         # print(f"random lam = {rndm_lam}")
-
+        
         # Compute predicted y_hat
         theta = model(rndm_lam.cpu())
         pred = torch.mm(X_train, theta[1:].view(-1, 1))
@@ -78,15 +78,15 @@ def train_SGD(dataloader, model, loss_fn, optimizer, distribution='uniform', tra
             pred += torch.mm(const, theta[0].view(-1, 1))
         pred = actv(pred)
         # print(theta[0])
-
+        
         loss = (1 - rndm_lam) * loss_fn(pred.view(-1, 1), y_train.view(-1, 1))
         loss += rndm_lam * 0.5 * theta.norm(p=2)**2
-
+        
         # Backpropagation
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
+        
         # if (trace_frequency > 0) & (batch % trace_frequency == 0):
         #     loss, current = loss.item(), (batch + 1) * len(X_train)
             #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
@@ -98,37 +98,110 @@ def test_SGD(dataloader, model, loss_fn, lam):
     with torch.no_grad():  #makes sure we don't corrupt gradients and is faster
         for batch, (X_test, y_test) in enumerate(dataloader):
           X_test, y_test = X_test.to(device), y_test.to(device)
-
+          
           # Compute prediction error
           theta = model(lam)
           pred = actv(torch.mm(X_test, theta[1:].view(-1, 1)) + theta[0].item())
           # print(f"prediction = {pred}")
-
+          
           oos = (1 - lam) * loss_fn(pred.view(-1, 1), y_test.view(-1, 1))
           oos += lam * 0.5 * theta.norm(p=2)**2
+          
+    return oos.item()
+    
+# majority class is set to be class 1
+# trace_frequency is measured in number of batches. -1 means don't print
+def fair_train_SGD(dataloader, model, loss_fn, optimizer, distribution='uniform', trace_frequency=-1):
+    model.train()
+    
+    for batch, (X_train, y_train) in enumerate(dataloader):
+        X_train, y_train = X_train.to(device), y_train.to(device)
+        
+        X_major = X_train[y_train == 1]
+        y_major = torch.ones(len(X_major))
+        X_minor = X_train[y_train == 0]
+        y_minor = torch.zeros(len(X_minor))
+        
+        rndm_lam = torch.tensor(0.5)
+        # SGD picks random regulation parameter lambda
+        if distribution == 'uniform':
+            rndm_lam = torch.torch.distributions.Uniform(0, 1).sample()
+        # print(f"random lam = {rndm_lam}")
 
+        # compute predicted y_hat
+        theta = model(rndm_lam.cpu())
+        # print(theta[0])
+        pred_major = torch.mm(X_major, theta[1:].view(-1, 1))
+        pred_minor = torch.mm(X_minor, theta[1:].view(-1, 1))
+        if model.intercept:
+            const_major = torch.ones(len(X_major), 1).to(device)
+            pred_major += torch.mm(const_major, theta[0].view(-1, 1))
+            const_minor = torch.ones(len(X_minor), 1).to(device)
+            pred_minor += torch.mm(const_minor, theta[0].view(-1, 1))
+            
+        # fair loss function
+        loss = (1 - rndm_lam) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1)) 
+        + rndm_lam * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+                
+        # backpropagation
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        # if (trace_frequency > 0) & (batch % trace_frequency == 0):
+        #     loss, current = loss.item(), (batch + 1) * len(X_train)
+            #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+# test function for fair objective
+def fair_test_SGD(dataloader, model, loss_fn, lam):
+    model.eval() #important
+    with torch.no_grad():  #makes sure we don't corrupt gradients and is faster
+        for batch, (X_test, y_test) in enumerate(dataloader):
+            X_test, y_test = X_test.to(device), y_test.to(device)
+            
+            X_major = X_test[y_test == 1]
+            y_major = torch.ones(len(X_major))
+            X_minor = X_test[y_test == 0]
+            y_minor = torch.zeros(len(X_minor))
+            
+            # compute prediction error
+            theta = model(lam)
+            pred_major = torch.mm(X_major, theta[1:].view(-1, 1)) + theta[0].item()
+            pred_minor = torch.mm(X_minor, theta[1:].view(-1, 1)) + theta[0].item()
+            # print(f"prediction = {pred}")
+            
+            oos = (1 - lam) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1)) 
+            + lam * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+                    
     return oos.item()
     
 # return a list of loss computed on a specified grid over the solution path
-def get_losses_SGD(model, lam_min, lam_max, num_grid, data_loader, criterion):
-    delta_lam = (lam_max - lam_min)/num_grid
-    lambdas = torch.arange(lam_max, lam_min, (-1)*delta_lam)
+def get_losses_SGD(model, lam_min, lam_max, num_grid, data_loader, criterion, obj=None):
+    if obj is None:
+        print("Please enter the objective: 'logit' or 'fairness'")
+        return
+    lambdas = np.linspace(lam_max, lam_min, num_grid)
     losses = []
     for lam in lambdas:
-        losses.append(test_SGD(data_loader, model, criterion, lam))
-
+        if obj == "logit":
+            losses.append(test_SGD(data_loader, model, criterion, lam))
+        elif obj == "fairness":
+            losses.append(fair_test_SGD(data_loader, model, criterion, lam))
+            
     return losses
-
-# return the supremum absolute error compared to the true loss accross the solution path    
-def get_sup_error_SGD(lam_min, lam_max, true_loss_list, model, data_loader, criterion):
-    fine_delta_lam = (lam_max - lam_min)/len(true_loss_list)
-    # check sup error
-    sup_error = 0
-    for i in range(len(true_loss_list)):
-        exact_soln = true_loss_list[i]
-        temp = 1 - i * fine_delta_lam
-        # approximate solution uses the linear weight of coarse grid model to test for regression parameter of the fine grid
-        approx_soln = test_SGD(data_loader, model, criterion, temp)
-        sup_error = torch.max(torch.tensor([sup_error, approx_soln - exact_soln]))
-        # print(sup_error)
-    return sup_error.item()
+    
+# return the absolute errors compared to the true loss accross the solution path  
+def get_errs_SGD(model, lam_min, lam_max, true_loss_list, data_loader, criterion, obj=None):
+    if obj is None:
+        print("Please enter the objective: 'logit' or 'fairness'")
+        return
+    losses = get_losses_SGD(model, lam_min, lam_max, len(true_loss_list), data_loader, criterion, obj=obj)
+    return losses - true_loss_list
+    
+# return the supremum absolute error compared to the true loss accross the solution path  
+def get_sup_error_SGD(lam_min, lam_max, true_loss_list, model, data_loader, criterion, obj=None):
+    if obj is None:
+        print("Please enter the objective: 'logit' or 'fairness'")
+        return
+    errs = get_errs_SGD(model, lam_min, lam_max, true_loss_list, data_loader, criterion, obj=obj)
+    return max(errs)
