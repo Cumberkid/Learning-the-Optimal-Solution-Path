@@ -46,7 +46,7 @@ class Logistic_Regression(nn.Module):
     def ridge_term(self):
         return self.linear.weight.norm(p=2)**2 + self.linear.bias.norm(p=2)**2
 
-"""The "train" function executes optimization on the input dataset w.r.t. the input loss function with the input optimizer. We will use the pytorch built-in SGD optimizer later, but note that this optimizer is actually just a deterministic gradient descent program.
+"""The "train" function executes optimization on the input dataset w.r.t. the input loss function with the input optimizer on the ridge-regularized regression objective $h(\theta, \lambda) = (1-\lambda)BCE(X\theta, y) + \frac{\lambda}{2}\|\theta\|^2$. We will use the pytorch built-in SGD optimizer later, but note that this optimizer is actually just a deterministic gradient descent program.
 
 To randomize for SGD, we notice that the loss function is a sum of losses of all training data points, and a standard SGD would randomly choose one of those points to descend on at each step of descent.
 
@@ -93,30 +93,8 @@ def test(dataloader, model, loss_fn, lam):
             oos += lam * 0.5 * model.ridge_term()
             
     return oos.item()
-    
-"""# Running Fair Regression Through Tourch NN"""
 
-# this initializes with random weights. Need to either set a seed or force initialization somewhere for reproducibility.
-# automatically fits an intercept. To turn off intercept, set bias=False in nn.Linear()
-class Fair_Regression(nn.Module):
-    def __init__(self, input_dim, output_dim, fair_param, init_weight, init_intercept):
-        super(Fair_Regression, self).__init__()
-        self.linear = nn.Linear(input_dim, output_dim, bias=True)
-        self.fair_param = fair_param
-        
-        # initialize for better performance
-        with torch.no_grad():
-          self.linear.weight.copy_(init_weight)
-          self.linear.bias.data.fill_(init_intercept)
-          
-    def forward(self, x):
-        return self.linear(x)
-
-"""The "train" function executes optimization on the input dataset w.r.t. the input loss function with the input optimizer. We will use the pytorch built-in SGD optimizer later, but note that this optimizer is actually just a deterministic gradient descent program.
-
-To randomize for SGD, we notice that the loss function is a sum of losses of all training data points, and a standard SGD would randomly choose one of those points to descend on at each step of descent.
-
-To speed up, we use a batch of data points to replace a single data point at each step of descent. When batch size = 1, this is equivalent to a standard SGD; and when batch size = training set size, this is simply a deterministic gradient descent.
+"""The "fair_train" function is similar to the "train" function except that its objective function aims to treat two groups with fairness, i.e. $h(\theta, \lambda) = (1-\lambda)*loss(X_{\text{group A}}\theta, y_{\text{group A}}) + \lambda*loss(X_{\text{group B}}\theta, y_{\text{group B}})$.
 """
 
 # trace_frequency is measured in number of batches. -1 means don't print
@@ -137,8 +115,8 @@ def fair_train(dataloader, model, loss_fn, optimizer, trace_frequency = -1):
         pred_minor = model(X_minor)
         
         # Fair loss function
-        loss = (1 - model.fair_param) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1))
-        loss += model.fair_param * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+        loss = (1 - model.reg_param) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1))
+        loss += model.reg_param * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
                 
         # Backpropagation
         optimizer.zero_grad()
@@ -149,7 +127,7 @@ def fair_train(dataloader, model, loss_fn, optimizer, trace_frequency = -1):
         #     loss, current = loss.item(), (batch + 1) * len(X_train)
         #     print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
-"""The "test" function defined here is our objective function $h(\theta, \lambda) = (1-\lambda)*loss(X_\theta, y) + \lambda*loss(X\theta, y). The linear weight from the above trained model is our $\theta$."""
+"""The "fair_test" function defined here is our objective function $h(\theta, \lambda) = (1-\lambda)*loss(X_{\text{group A}}\theta, y_{\text{group A}}) + \lambda*loss(X_{\text{group B}}\theta, y_{\text{group B}})$. The linear weight from the above trained model is our $\theta$."""
 
 # Test function
 def fair_test(dataloader, model, loss_fn, lam):
@@ -168,8 +146,8 @@ def fair_test(dataloader, model, loss_fn, lam):
             pred_minor = model(X_minor)
             
             # With regularization
-            oos = (1 - model.fair_param) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1)) 
-            oos += model.fair_param * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+            oos = (1 - model.reg_param) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1)) 
+            oos += model.reg_param * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
                     
     return oos.item()
 
@@ -189,10 +167,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
         lam = lam_max - i * fine_delta_lam
         # print(f"nearest i = {i}\t lam = {lam}")
         
-    if obj == "logit":
-        model.reg_param = lam
-    elif obj == "fairness":
-        model.fair_param = lam
+    model.reg_param = lam
         
     early_stop = False
     itr = 0
@@ -253,17 +228,13 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     # first weight is initialized at 0
     weight = torch.zeros(data_input_dim)
     intercept = 0
+    model = Logistic_Regression(data_input_dim, 1, lam_max, weight, intercept).to(device)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    optimizer.zero_grad()
     
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
         return
-    elif obj == "logit":
-        model = Logistic_Regression(data_input_dim, 1, lam_max, weight, intercept).to(device)
-    elif obj == "fairness":
-        model = Fair_Regression(data_input_dim, 1, lam_max, weight, intercept).to(device)
-        
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
-    optimizer.zero_grad()
     
     for lam in lambdas:
         # print(f"Running model on lambda = {lam}")
@@ -279,11 +250,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
         weights.append(model.linear.weight.clone().data.cpu().numpy()[0])
         intercepts.append(model.linear.bias.clone().data.cpu().numpy()[0])
         # print(model.linear.weight)
-        if obj == "logit":
-            params.append(model.reg_param)
-        elif obj == "fairness":
-            params.append(model.fair_param)
-            
+        params.append(model.reg_param)
         total_itr += itr
         # print(total_itr)
         
@@ -291,55 +258,51 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
 
 """Helper function that takes in a list of coarse grid models and returns the simulated losses and errors over $\lambda\in[0,1]$ compared to the exact solutions."""
 # return the simulated losses accross the solution path
-def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, params, data_loader, criterion, obj=None):
+def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, params, data_loader, loss_fn, obj=None):
     
     losses = []
     coarse_grid = 0
     weight = torch.tensor(weights[coarse_grid])
     intercept = intercepts[coarse_grid]
     param = params[coarse_grid]
-    
+    model = Logistic_Regression(len(weight), 1, param, weight, intercept).to(device)
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
         return
-    elif obj == "logit":
-        model = Logistic_Regression(len(weight), 1, param, weight, intercept).to(device)
-    elif obj == "fairness":
-        model = Fair_Regression(len(weight), 1, param, weight, intercept).to(device)
         
     lam = lam_max
     while lam >= lam_min:
         if (coarse_grid + 1) < len(params):
             if (params[coarse_grid] - lam) > (lam - params[coarse_grid + 1]):
                 coarse_grid += 1
-                if obj == "logit":
-                    model.reg_param = params[coarse_grid]
-                elif obj == "fairness":
-                    model.fair_param = params[coarse_grid]
+                model.reg_param = params[coarse_grid]
                     
                 with torch.no_grad():
                     model.linear.weight.copy_(torch.tensor(weights[coarse_grid]))
                     model.linear.bias.data.fill_(intercepts[coarse_grid])
         # approximate solution uses the linear weight of coarse grid model to test for regression parameter of the fine grid
-        approx_loss = test(data_loader, model, criterion, lam)
+        if obj == "logit":
+            approx_loss = test(testDataLoader, model, loss_fn, lam)
+        elif obj == "fairness":
+            approx_loss = fair_test(testDataLoader, model, loss_fn, lam)
         losses.append(approx_loss)
         lam -= fine_delta_lam
     return losses
 
 # return the absolute errors compared to the true loss accross the solution path
-def get_errs(lam_min, lam_max, true_loss_list, intercepts, weights, reg_params, data_loader, criterion, obj=None):
+def get_errs(lam_min, lam_max, true_loss_list, intercepts, weights, reg_params, data_loader, loss_fn, obj=None):
     fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list)-1)
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
         return
-    losses = get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, reg_params, data_loader, criterion, obj=obj)
+    losses = get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, reg_params, data_loader, loss_fn, obj=obj)
     errs = losses - true_loss_list
     return errs
 
 # return the supremum absolute error compared to the true loss accross the solution path
-def get_sup_error(lam_min, lam_max, true_loss_list, intercepts, weights, reg_params, data_loader, criterion, obj=None):
+def get_sup_error(lam_min, lam_max, true_loss_list, intercepts, weights, reg_params, data_loader, loss_fn, obj=None):
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
         return
-    errs = get_errs(lam_min, lam_max, true_loss_list, intercepts, weights, reg_params, data_loader, criterion, obj=obj)
+    errs = get_errs(lam_min, lam_max, true_loss_list, intercepts, weights, reg_params, data_loader, loss_fn, obj=obj)
     return max(errs)
