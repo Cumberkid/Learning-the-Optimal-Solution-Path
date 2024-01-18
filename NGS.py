@@ -106,9 +106,9 @@ def fair_train(dataloader, model, loss_fn, optimizer, trace_frequency = -1):
         X_train, y_train = X_train.to(device), y_train.to(device)
         # print(batch, len(X_train))
         X_major = X_train[y_train == 1]
-        y_major = torch.ones(len(X_major))
+        y_major = torch.ones(len(X_major)).to(device)
         X_minor = X_train[y_train == 0]
-        y_minor = torch.zeros(len(X_minor))
+        y_minor = torch.zeros(len(X_minor)).to(device)
         
         # Compute predicted y_hat
         pred_major = model(X_major)
@@ -137,9 +137,9 @@ def fair_test(dataloader, model, loss_fn, lam):
             X_test, y_test = X_test.to(device), y_test.to(device)
             
             X_major = X_test[y_test == 1]
-            y_major = torch.ones(len(X_major))
+            y_major = torch.ones(len(X_major)).to(device)
             X_minor = X_test[y_test == 0]
-            y_minor = torch.zeros(len(X_minor))
+            y_minor = torch.zeros(len(X_minor)).to(device)
             
             # Compute predicted y_hat
             pred_major = model(X_major)
@@ -218,6 +218,10 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
 def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
                       data_input_dim, obj=None, lr=1e-3, alpha=1, SGD=False,
                       testDataLoader=None, true_loss_list=None, stopping_criterion=None):
+    if obj is None:
+        print("Please enter the objective: 'logit' or 'fairness'")
+        return
+    
     fine_delta_lam = None
     if true_loss_list is not None:
         fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list) - 1)
@@ -235,10 +239,6 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     model = Logistic_Regression(data_input_dim, 1, lam_max, weight, intercept).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
     optimizer.zero_grad()
-    
-    if obj is None:
-        print("Please enter the objective: 'logit' or 'fairness'")
-        return
     
     for lam in lambdas:
         # print(f"Running model on lambda = {lam}")
