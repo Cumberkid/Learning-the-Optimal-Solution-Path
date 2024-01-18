@@ -118,9 +118,9 @@ def fair_train_SGD(dataloader, model, loss_fn, optimizer, distribution='uniform'
         X_train, y_train = X_train.to(device), y_train.to(device)
         
         X_major = X_train[y_train == 1]
-        y_major = torch.ones(len(X_major))
+        y_major = torch.ones(len(X_major)).to(device)
         X_minor = X_train[y_train == 0]
-        y_minor = torch.zeros(len(X_minor))
+        y_minor = torch.zeros(len(X_minor)).to(device)
         
         rndm_lam = torch.tensor(0.5)
         # SGD picks random regulation parameter lambda
@@ -162,9 +162,9 @@ def fair_test_SGD(dataloader, model, loss_fn, lam):
             X_test, y_test = X_test.to(device), y_test.to(device)
             
             X_major = X_test[y_test == 1]
-            y_major = torch.ones(len(X_major))
+            y_major = torch.ones(len(X_major)).to(device)
             X_minor = X_test[y_test == 0]
-            y_minor = torch.zeros(len(X_minor))
+            y_minor = torch.zeros(len(X_minor)).to(device)
             
             # compute prediction error
             theta = model(lam)
