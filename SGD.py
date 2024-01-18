@@ -113,7 +113,7 @@ def test_SGD(dataloader, model, loss_fn, lam):
 # trace_frequency is measured in number of batches. -1 means don't print
 def fair_train_SGD(dataloader, model, loss_fn, optimizer, distribution='uniform', trace_frequency=-1):
     model.train()
-    
+    actv = nn.Sigmoid()
     for batch, (X_train, y_train) in enumerate(dataloader):
         X_train, y_train = X_train.to(device), y_train.to(device)
         
@@ -138,7 +138,8 @@ def fair_train_SGD(dataloader, model, loss_fn, optimizer, distribution='uniform'
             pred_major += torch.mm(const_major, theta[0].view(-1, 1))
             const_minor = torch.ones(len(X_minor), 1).to(device)
             pred_minor += torch.mm(const_minor, theta[0].view(-1, 1))
-            
+        pred_major = actv(pred_major)
+        pred_minor = actv(pred_minor)
         # fair loss function
         loss = (1 - rndm_lam) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1)) 
         loss += rndm_lam * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
@@ -155,6 +156,7 @@ def fair_train_SGD(dataloader, model, loss_fn, optimizer, distribution='uniform'
 # test function for fair objective
 def fair_test_SGD(dataloader, model, loss_fn, lam):
     model.eval() #important
+    actv = nn.Sigmoid()
     with torch.no_grad():  #makes sure we don't corrupt gradients and is faster
         for batch, (X_test, y_test) in enumerate(dataloader):
             X_test, y_test = X_test.to(device), y_test.to(device)
@@ -166,8 +168,8 @@ def fair_test_SGD(dataloader, model, loss_fn, lam):
             
             # compute prediction error
             theta = model(lam)
-            pred_major = torch.mm(X_major, theta[1:].view(-1, 1)) + theta[0].item()
-            pred_minor = torch.mm(X_minor, theta[1:].view(-1, 1)) + theta[0].item()
+            pred_major = actv(torch.mm(X_major, theta[1:].view(-1, 1)) + theta[0].item())
+            pred_minor = actv(torch.mm(X_minor, theta[1:].view(-1, 1)) + theta[0].item())
             # print(f"prediction = {pred}")
             
             oos = (1 - lam) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1)) 
