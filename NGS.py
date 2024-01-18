@@ -174,7 +174,11 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
     for t in range(epochs):
         if SGD:
             # shrink learning rate
-            lr = min([0.1, alpha/(t+1)])
+            if obj == "logit":
+                lr = min([0.1, alpha/(t+1)])
+            elif obj == "fairness":
+                lr = min([1, alpha/(t+1)])
+            
             # print(lr)
             optimizer.zero_grad()
             for param_group in optimizer.param_groups:
@@ -218,7 +222,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     if true_loss_list is not None:
         fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list) - 1)
         
-    params = []
+    reg_params = []
     weights = []
     intercepts = []
     total_itr = 0
@@ -250,32 +254,32 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
         weights.append(model.linear.weight.clone().data.cpu().numpy()[0])
         intercepts.append(model.linear.bias.clone().data.cpu().numpy()[0])
         # print(model.linear.weight)
-        params.append(model.reg_param)
+        reg_params.append(model.reg_param)
         total_itr += itr
         # print(total_itr)
         
-    return total_itr, params, intercepts, weights
+    return total_itr, reg_params, intercepts, weights
 
 """Helper function that takes in a list of coarse grid models and returns the simulated losses and errors over $\lambda\in[0,1]$ compared to the exact solutions."""
 # return the simulated losses accross the solution path
-def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, params, data_loader, loss_fn, obj=None):
+def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, reg_params, data_loader, loss_fn, obj=None):
     
     losses = []
     coarse_grid = 0
     weight = torch.tensor(weights[coarse_grid])
     intercept = intercepts[coarse_grid]
-    param = params[coarse_grid]
-    model = Logistic_Regression(len(weight), 1, param, weight, intercept).to(device)
+    reg_param = reg_params[coarse_grid]
+    model = Logistic_Regression(len(weight), 1, reg_param, weight, intercept).to(device)
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
         return
         
     lam = lam_max
     while lam >= lam_min:
-        if (coarse_grid + 1) < len(params):
-            if (params[coarse_grid] - lam) > (lam - params[coarse_grid + 1]):
+        if (coarse_grid + 1) < len(reg_params):
+            if (reg_params[coarse_grid] - lam) > (lam - reg_params[coarse_grid + 1]):
                 coarse_grid += 1
-                model.reg_param = params[coarse_grid]
+                model.reg_param = reg_params[coarse_grid]
                     
                 with torch.no_grad():
                     model.linear.weight.copy_(torch.tensor(weights[coarse_grid]))
