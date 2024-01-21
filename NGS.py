@@ -273,9 +273,9 @@ def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, reg_params
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
         return
-        
-    lam = lam_max
-    while lam >= lam_min:
+    
+    for i in range(round((lam_max - lam_min) / fine_delta_lam) + 1):
+        lam = lam_max - i * fine_delta_lam
         if (coarse_grid + 1) < len(reg_params):
             if (reg_params[coarse_grid] - lam) > (lam - reg_params[coarse_grid + 1]):
                 coarse_grid += 1
@@ -286,11 +286,11 @@ def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, reg_params
                     model.linear.bias.data.fill_(intercepts[coarse_grid])
         # approximate solution uses the linear weight of coarse grid model to test for regression parameter of the fine grid
         if obj == "logit":
-            approx_loss = test(testDataLoader, model, loss_fn, lam)
+            approx_loss = test(data_loader, model, loss_fn, lam)
         elif obj == "fairness":
-            approx_loss = fair_test(testDataLoader, model, loss_fn, lam)
+            approx_loss = fair_test(data_loader, model, loss_fn, lam)
         losses.append(approx_loss)
-        lam -= fine_delta_lam
+        # print(lam, coarse_grid)
     return losses
 
 # return the absolute errors compared to the true loss accross the solution path
