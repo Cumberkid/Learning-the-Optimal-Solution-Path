@@ -178,7 +178,7 @@ def fair_test_SGD(dataloader, model, loss_fn, lam):
                     
     return oos.item()
     
-def learn_optimal_solution_path(input_dim, basis_dim, phi_lam, epochs, dataLoader, loss_fn, lr=1e-3, alpha=1, init_lr=0.1, SGD=False, obj=None, intercept=True, trace_frequency=-1)
+def learn_optimal_solution_path(input_dim, basis_dim, phi_lam, epochs, dataLoader, loss_fn, lr=1e-3, alpha=1, init_lr=0.1, SGD=False, obj=None, intercept=True, trace_frequency=-1):
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
         return
