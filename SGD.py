@@ -178,6 +178,40 @@ def fair_test_SGD(dataloader, model, loss_fn, lam):
                     
     return oos.item()
     
+def learn_optimal_solution_path(input_dim, basis_dim, phi_lam, epochs, dataLoader, loss_fn, lr=1e-3, alpha=1, init_lr=0.1, SGD=False, obj=None, intercept=True, trace_frequency=-1)
+    if obj is None:
+        print("Please enter the objective: 'logit' or 'fairness'")
+        return
+    # build the model
+    model = SGD.Basis_TF_SGD(input_dim, basis_dim, phi_lam, intercept).to(device)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    optimizer.zero_grad()
+    sup_err_history = []
+    num_itr_history = []
+
+    for t in range(epochs):
+        if SGD:
+            # shrink learning rate
+            lr = min([init_lr, alpha/(t+1)])
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
+                
+        if obj == "logit":
+            train_SGD(dataLoader, model, loss_fn, optimizer)
+        elif obj == "fairness":
+            fair_train_SGD(dataLoader, model, loss_fn, optimizer)
+
+        if (t+1) % 100 == 0:
+            num_itr_history.append(t+1)
+            sup_err = get_sup_error_SGD(lam_min, lam_max, true_losses,
+                                        model, test_data_loader, criterion, obj=obj)
+            sup_err_history.append(sup_err)
+            if (trace_frequency > 0) & ((t+1) % trace_frequency == 0):
+                print(f"--------approximate solution path for # itr = {t+1} complete--------")
+                print(f"# itr: {t+1}\t sup error: {sup_err}")
+
+    return num_itr_history, sup_err_history
+    
 # return a list of loss computed on a specified grid over the solution path
 def get_losses_SGD(model, lam_min, lam_max, num_grid, data_loader, loss_fn, obj=None):
     if obj is None:

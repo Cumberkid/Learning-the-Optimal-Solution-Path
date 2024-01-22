@@ -155,7 +155,7 @@ def fair_test(dataloader, model, loss_fn, lam):
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoader, data_input_dim,
-                 obj=None, alpha=1, SGD=False, testDataLoader=None,
+                 obj=None, alpha=1, init_lr=0.1, SGD=False, testDataLoader=None,
                  true_loss_list=None, fine_delta_lam=None, stopping_criterion=None):
                      
     if true_loss_list is not None:
@@ -173,13 +173,8 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
     itr = 0
     for t in range(epochs):
         if SGD:
-            # shrink learning rate
-            if obj == "logit":
-                lr = min([0.1, alpha/(t+1)])
-            elif obj == "fairness":
-                lr = min([1, alpha/(t+1)])
-            
-            # print(lr)
+            # shrink learning rate:
+            lr = min([init_lr, alpha/(t+1)])
             optimizer.zero_grad()
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
@@ -216,7 +211,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
 # from lam_min to lam_max
 # returns a list of trained models
 def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
-                      data_input_dim, obj=None, lr=1e-3, alpha=1, SGD=False,
+                      data_input_dim, obj=None, lr=1e-3, alpha=1, init_lr=1, SGD=False,
                       testDataLoader=None, true_loss_list=None, stopping_criterion=None):
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
@@ -245,7 +240,8 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
         itr = GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer,
                                   trainDataLoader=trainDataLoader,
                                   data_input_dim=data_input_dim,
-                                  obj=obj, alpha=alpha, SGD=SGD, 
+                                  obj=obj, alpha=alpha, 
+                                  init_lr=init_lr, SGD=SGD, 
                                   testDataLoader=testDataLoader,
                                   true_loss_list=true_loss_list,
                                   fine_delta_lam=fine_delta_lam,
