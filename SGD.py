@@ -204,7 +204,7 @@ def learn_optimal_solution_path(input_dim, basis_dim, phi_lam, epochs, trainData
         if (t+1) % 100 == 0:
             num_itr_history.append(t+1)
             sup_err = get_sup_error_SGD(lam_min, lam_max, true_losses,
-                                        model, testDataLoader, criterion, obj=obj)
+                                        model, testDataLoader, loss_fn, obj=obj)
             sup_err_history.append(sup_err)
             if (trace_frequency > 0) & ((t+1) % trace_frequency == 0):
                 print(f"--------approximate solution path for # itr = {t+1} complete--------")
