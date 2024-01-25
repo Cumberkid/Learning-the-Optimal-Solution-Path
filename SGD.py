@@ -178,7 +178,7 @@ def fair_test_SGD(dataloader, model, loss_fn, lam):
                     
     return oos.item()
     
-def learn_optimal_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, true_losses, lr=1e-3, alpha=1, init_lr=0.1, SGD=False, obj=None, init_weight=None, intercept=True, trace_frequency=-1):
+def learn_optimal_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, true_losses, lr=1e-3, alpha=1, init_lr=0.1, SGD=False, obj=None, init_weight=None, intercept=True, record_frequency=100, frequency=-1):
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
         return
@@ -201,7 +201,7 @@ def learn_optimal_solution_path(input_dim, basis_dim, phi_lam, epochs, trainData
         elif obj == "fairness":
             fair_train_SGD(trainDataLoader, model, loss_fn, optimizer)
 
-        if (t+1) % 100 == 0:
+        if (t+1) % record_frequency == 0:
             num_itr_history.append(t+1)
             sup_err = get_sup_error_SGD(lam_min, lam_max, true_losses,
                                         model, testDataLoader, loss_fn, obj=obj)

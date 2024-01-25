@@ -146,8 +146,8 @@ def fair_test(dataloader, model, loss_fn, lam):
             pred_minor = model(X_minor)
             
             # With regularization
-            oos = (1 - model.reg_param) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1)) 
-            oos += model.reg_param * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+            oos = (1 - lam) * loss_fn(pred_major.view(-1, 1), y_major.view(-1, 1)) 
+            oos += lam * loss_fn(pred_minor.view(-1, 1), y_minor.view(-1, 1))
                     
     return oos.item()
 
