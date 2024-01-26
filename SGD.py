@@ -210,7 +210,7 @@ def learn_optimal_solution_path(input_dim, basis_dim, phi_lam, epochs, trainData
                 print(f"--------approximate solution path for # itr = {t+1} complete--------")
                 print(f"# itr: {t+1}\t sup error: {sup_err}")
 
-    return num_itr_history, sup_err_history
+    return num_itr_history, sup_err_history, model
     
 # return a list of loss computed on a specified grid over the solution path
 def get_losses_SGD(model, lam_min, lam_max, num_grid, data_loader, loss_fn, obj=None):
