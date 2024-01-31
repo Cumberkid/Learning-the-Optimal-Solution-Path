@@ -12,6 +12,7 @@ Original file is located at
 import numpy as np
 import torch
 from torch import nn
+from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import Dataset, DataLoader  #for creating the dataset
 
 
@@ -155,8 +156,8 @@ def fair_test(dataloader, model, loss_fn, lam):
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoader, data_input_dim,
-                 obj=None, alpha=1, init_lr=0.1, SGD=False, testDataLoader=None,
-                 true_loss_list=None, fine_delta_lam=None, stopping_criterion=None):
+                 obj=None, alpha=1, init_lr=0.1, diminish=False, gamma=0.1, dim_step=30, SGD=False, 
+                 testDataLoader=None, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None):
                      
     if true_loss_list is not None:
         # true loss
@@ -168,6 +169,11 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
         # print(f"nearest i = {i}\t lam = {lam}")
         
     model.reg_param = lam
+    if diminish:
+        # Define the learning rate scheduler
+        scheduler = StepLR(optimizer, step_size=dim_step, gamma=gamma)  # Decrease LR by a factor of gamma every dim_step epochs
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = init_lr  
         
     early_stop = False
     itr = 0
@@ -200,6 +206,10 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
                     early_stop = True
                     break  # Early stop
                 
+        if diminish:
+            # Update the learning rate
+            scheduler.step()
+            
     if not early_stop:
         itr += epochs
         
@@ -211,7 +221,8 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
 # from lam_min to lam_max
 # returns a list of trained models
 def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
-                      data_input_dim, obj=None, lr=1e-3, alpha=1, init_lr=1, SGD=False,
+                      data_input_dim, obj=None, lr=1e-3, alpha=1, init_lr=1, 
+                      diminish=False, gamma=0.1, dim_step=30, SGD=False,
                       testDataLoader=None, true_loss_list=None, stopping_criterion=None):
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
@@ -241,12 +252,12 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
                                   trainDataLoader=trainDataLoader,
                                   data_input_dim=data_input_dim,
                                   obj=obj, alpha=alpha, 
-                                  init_lr=init_lr, SGD=SGD, 
+                                  init_lr=init_lr, diminish=diminish, 
+                                  gamma=gamma, dim_step=dim_step, SGD=SGD, 
                                   testDataLoader=testDataLoader,
                                   true_loss_list=true_loss_list,
                                   fine_delta_lam=fine_delta_lam,
                                   stopping_criterion=stopping_criterion)
-                                  
         weights.append(model.linear.weight.clone().data.cpu().numpy()[0])
         intercepts.append(model.linear.bias.clone().data.cpu().numpy()[0])
         # print(model.linear.weight)
