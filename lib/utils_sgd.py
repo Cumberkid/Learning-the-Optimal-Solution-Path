@@ -1,6 +1,13 @@
 import torch
 import math
 from scipy.special import legendre
+device = (
+    "cuda"
+    if torch.cuda.is_available()
+    else "mps"
+    if torch.backends.mps.is_available()
+    else "cpu"
+)
 
 # compute \Phi(\lambda)
 def phi_lam_Legendre(lam, basis_dim):
