@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch.optim.lr_scheduler import StepLR
-from lib.lof_reg import Logistic_Regression
+from lib.lof_reg_module import Logistic_Regression
 from lib.log_reg_solver import train, test
 from lib.fair_reg_solver import fair_train, fair_test
 
