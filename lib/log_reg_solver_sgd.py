@@ -7,7 +7,7 @@ device = (
     if torch.cuda.is_available()
     else "mps"
     if torch.backends.mps.is_available()
-    else "CPU"
+    else "cpu"
 )
 
 # trace_frequency is measured in number of batches. -1 means don't print
