@@ -14,7 +14,7 @@ device = (
     else "cpu"
 )
 
-def learn_optimal_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, true_losses, lr=1e-3, alpha=1, init_lr=0.1, diminish=False, gamma=0.1, dim_step=30, SGD=False, obj=None, init_weight=None, intercept=True, record_frequency=100, trace_frequency=-1):
+def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, true_losses, lr=1e-3, alpha=1, init_lr=0.1, diminish=False, gamma=0.1, dim_step=30, SGD=False, obj=None, init_weight=None, intercept=True, record_frequency=100, trace_frequency=-1):
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
         return
