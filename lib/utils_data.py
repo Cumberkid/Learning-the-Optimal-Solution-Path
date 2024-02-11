@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from torch.utils.data import Dataset  #for creating the dataset
 
 #Prep data for Pytorch Dataloader
