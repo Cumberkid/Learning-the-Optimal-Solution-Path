@@ -7,7 +7,7 @@ device = (
     if torch.cuda.is_available()
     else "mps"
     if torch.backends.mps.is_available()
-    else "CPU"
+    else "cpu"
 )
 
 """Helper function that takes in a list of coarse grid models and returns the simulated losses and errors over $\lambda\in[0,1]$ compared to the exact solutions."""
