@@ -29,7 +29,7 @@ import importlib
 
 """## Import our own modules"""
 
-!rm -r Learning-the-Optimal-Solution-Path
+#!rm -r Learning-the-Optimal-Solution-Path
 !git clone https://github.com/Cumberkid/Learning-the-Optimal-Solution-Path.git
 
 """(Using Colab)"""
