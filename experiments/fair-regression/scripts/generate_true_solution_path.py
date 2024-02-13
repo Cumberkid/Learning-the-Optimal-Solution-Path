@@ -21,26 +21,12 @@ device = (
     if torch.backends.mps.is_available()
     else "cpu"
 )
-print(f"Using device: {device}")
 
 import pandas as pd
 
-import importlib
-
 """## Import our own modules"""
 
-#!rm -r Learning-the-Optimal-Solution-Path
-!git clone https://github.com/Cumberkid/Learning-the-Optimal-Solution-Path.git
-
-"""(Using Colab)"""
-
-import sys
-
-# Add the parent directory to sys.path 
-sys.path.append('/content/Learning-the-Optimal-Solution-Path')
-
 import lib
-importlib.reload(lib)
 
 from lib.utils_data import Regression_Data
 from lib.ngs.naive_grid_search import naive_grid_search
@@ -52,8 +38,8 @@ We use the Naive Grid Search with $2^{10}$ grids, trained by full gradient desce
 """
 
 # file path for Colab. May need to change this
-X_df = pd.read_csv('/content/Learning-the-Optimal-Solution-Path/experiments/fair-regression/data/X_processed.csv')
-y_df = pd.read_csv('/content/Learning-the-Optimal-Solution-Path/experiments/fair-regression/data/y_processed.csv')
+X_df = pd.read_csv('../data/X_processed.csv')
+y_df = pd.read_csv('../data/y_processed.csv')
 
 X = np.array(X_df)
 y = np.array(y_df).squeeze()
