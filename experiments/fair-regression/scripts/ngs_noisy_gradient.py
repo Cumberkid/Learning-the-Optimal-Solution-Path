@@ -16,7 +16,6 @@ import pandas as pd
 """## Import our own modules"""
 
 import lib
-# importlib.reload(lib)
 
 from lib.utils_data import Regression_Data
 from lib.ngs.naive_grid_search import naive_grid_search
@@ -32,8 +31,8 @@ X = np.array(X_df)
 y = np.array(y_df).squeeze()
 
 full_data = Regression_Data(X, y)
-# full gradient descent uses all data points
-GD_data_loader = DataLoader(full_data, batch_size=len(full_data), shuffle=True, )
+# stochastic gradient descent uses mini-batch
+SGD_data_loader = DataLoader(full_data, batch_size=20, shuffle=True, )
 # test data
 test_data_loader = DataLoader(full_data, batch_size=len(full_data), shuffle=False, )
 
