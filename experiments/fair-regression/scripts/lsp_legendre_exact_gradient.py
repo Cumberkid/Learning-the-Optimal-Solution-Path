@@ -29,7 +29,6 @@ import pandas as pd
 """## Import our own modules"""
 
 import lib
-# importlib.reload(lib)
 
 from lib.utils_data import Regression_Data
 from lib.lsp.basis_generator import phi_lam_legendre
