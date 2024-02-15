@@ -55,6 +55,10 @@ SGD_data_loader = DataLoader(full_data, batch_size=20, shuffle=True, )
 # test data
 test_data_loader = DataLoader(full_data, batch_size=len(full_data), shuffle=False, )
 
+# Read the CSV file into a DataFrame
+truth = pd.read_csv('../results/exact_soln_list.csv')
+true_losses = truth['losses'].to_numpy()
+
 lam_max = 1
 lam_min = 0
 input_dim = X.shape[1]
@@ -69,11 +73,6 @@ phi_lam = phi_lam_legendre
 
 criterion = torch.nn.BCELoss()
 input_dim = X.shape[1]
-
-# Read the CSV file into a DataFrame
-truth = pd.read_csv('../results/exact_soln_list.csv')
-
-true_losses = truth['losses'].to_numpy()
 
 """We use diminishing learning rate for better demonstrate convergence. If we use a constant learning rate, the solution path error will eventually do a random walk after descending to a certain threshold value.
 
