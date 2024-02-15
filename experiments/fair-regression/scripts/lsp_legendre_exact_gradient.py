@@ -69,11 +69,12 @@ phi_lam = phi_lam_legendre
 criterion = torch.nn.BCELoss()
 input_dim = X.shape[1]
 
-"""# Exact Gradient Oracle Diminishing LR"""
 # Read the CSV file into a DataFrame
 truth = pd.read_csv('../results/exact_soln_list.csv')
 
 true_losses = truth['losses'].to_numpy()
+
+"""# Exact Gradient Oracle Diminishing LR"""
 
 """We use diminishing learning rate for better demonstrate convergence. If we use a constant learning rate, the solution path error will eventually do a random walk after descending to a certain threshold value.
 
