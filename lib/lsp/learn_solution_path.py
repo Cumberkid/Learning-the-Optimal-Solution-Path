@@ -1,10 +1,10 @@
 import torch
 from torch import nn
 from torch.optim.lr_scheduler import StepLR
-from lib.basis_tf_module import Basis_TF_SGD
-from lib.log_reg_solver_sgd import train_SGD, test_SGD
-from lib.fair_reg_solver_sgd import fair_train_SGD, fair_test_SGD
-from lib.utils_sgd import get_sup_error_SGD
+from lib.lsp.basis_tf_module import Basis_TF_SGD
+from lib.lsp.log_reg_solver_sgd import train_SGD, test_SGD
+from lib.lsp.fair_reg_solver_sgd import fair_train_SGD, fair_test_SGD
+from lib.lsp.utils_sgd import get_sup_error_SGD
 
 device = (
     "cuda"
