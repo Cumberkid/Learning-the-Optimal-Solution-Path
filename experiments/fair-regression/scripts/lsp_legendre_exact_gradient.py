@@ -87,8 +87,8 @@ epochs = 20000
 
 basis_dim = 3
 lr = 0.5
-gamma=0.97
-dim_step=100
+gamma=0.97        # diminishing factor
+dim_step=100        # diminishing frequency
 
 np.random.seed(8675309)
 torch.manual_seed(8675309)
@@ -99,14 +99,17 @@ num_itr_history, sup_err_history, model = learn_solution_path(input_dim, basis_d
                                                                           lr=lr, diminish=True, gamma=gamma, dim_step=dim_step,
                                                                           obj='fairness',
                                                                           record_frequency=50, trace_frequency=100)
+num_itr_history = np.array(num_itr_history)
 sup_err_history = np.array(sup_err_history)
 
 file_path = 'SGD_results_exact_diminish.csv'
 
 # Read the CSV file into a DataFrame if already exist
 # df = pd.read_csv(file_path)
+# df[f'sup_err_{basis_dim}'] = sup_err_history
 
-df[f'sup_err_{basis_dim}'] = sup_err_history
+# Change the column name 'sup_err_x' according to basis_dim
+df = pd.DataFrame(np.column_stack((num_itr_history, sup_err_history)), columns=['num_itr', 'sup_err_3'])
 
 # Save the DataFrame to a CSV file
 df.to_csv(file_path, index=False)
