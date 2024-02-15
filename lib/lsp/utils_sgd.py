@@ -1,6 +1,6 @@
 import numpy as np
-from lib.log_reg_solver_sgd import test_SGD
-from lib.fair_reg_solver_sgd import fair_test_SGD
+from lib.lsp.log_reg_solver_sgd import test_SGD
+from lib.lsp.fair_reg_solver_sgd import fair_test_SGD
 
 # return a list of loss computed on a specified grid over the solution path
 def get_losses_SGD(model, lam_min, lam_max, num_grid, data_loader, loss_fn, obj=None):
