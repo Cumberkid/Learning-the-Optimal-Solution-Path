@@ -43,7 +43,7 @@ criterion=torch.nn.BCELoss()
 
 
 # Read the CSV file into a DataFrame
-truth = pd.read_csv('/content/Learning-the-Optimal-Solution-Path/experiments/fair-regression/notebooks/results/exact_soln_list.csv')
+truth = pd.read_csv('../results/exact_soln_list.csv')
 
 true_losses = truth['losses'].to_numpy()
 
