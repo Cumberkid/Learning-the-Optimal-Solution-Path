@@ -19,7 +19,7 @@ device = (
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoader, data_input_dim,
                  obj=None, alpha=1, init_lr=0.1, diminish=False, gamma=0.1, dim_step=30, SGD=False, 
                  testDataLoader=None, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None):
-                     
+    # performs early-stop if the true solution path is known                
     if true_loss_list is not None:
         # true loss
         i = round((lam_max - lam) / fine_delta_lam)
