@@ -54,6 +54,12 @@ GD_data_loader = DataLoader(full_data, batch_size=len(full_data), shuffle=True, 
 # test data
 test_data_loader = DataLoader(full_data, batch_size=len(full_data), shuffle=False, )
 
+# Read the CSV file into a DataFrame
+truth = pd.read_csv('../results/exact_soln_list.csv')
+true_losses = truth['losses'].to_numpy()
+
+"""# Set up LSP"""
+
 lam_max = 1
 lam_min = 0
 input_dim = X.shape[1]
@@ -63,16 +69,11 @@ criterion=torch.nn.BCELoss()
 
 We use Legendre polynomials with degree $\leq n$ as the basis vectors for $\Phi(\lambda)$.
 """
-
 phi_lam = phi_lam_legendre
 
 criterion = torch.nn.BCELoss()
 input_dim = X.shape[1]
 
-# Read the CSV file into a DataFrame
-truth = pd.read_csv('../results/exact_soln_list.csv')
-
-true_losses = truth['losses'].to_numpy()
 
 """# Exact Gradient Oracle Diminishing LR"""
 
