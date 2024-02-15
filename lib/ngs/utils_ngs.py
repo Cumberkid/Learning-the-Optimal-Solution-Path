@@ -1,7 +1,7 @@
 import torch
-from lib.log_reg_module import Logistic_Regression
-from lib.log_reg_solver import test
-from lib.fair_reg_solver import fair_test
+from lib.ngs.log_reg_module import Logistic_Regression
+from lib.ngs.log_reg_solver import test
+from lib.ngs.fair_reg_solver import fair_test
 device = (
     "cuda"
     if torch.cuda.is_available()
