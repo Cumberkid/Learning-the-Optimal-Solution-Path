@@ -1,18 +1,10 @@
 import torch
 
-device = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
-    else "cpu"
-)
-
 """The "fair_train" function is similar to the "train" function except that its objective function aims to treat two groups with fairness, i.e. $h(\theta, \lambda) = (1-\lambda)*loss(X_{\text{group A}}\theta, y_{\text{group A}}) + \lambda*loss(X_{\text{group B}}\theta, y_{\text{group B}})$.
 """
 
 # trace_frequency is measured in number of batches. -1 means don't print
-def fair_train(dataloader, model, loss_fn, optimizer, trace_frequency = -1):
+def fair_train(dataloader, model, loss_fn, optimizer, device="cpu", trace_frequency = -1):
     # size = len(dataloader.dataset)
     model.train()
     # here, the "batch" notion takes care of randomization
@@ -44,7 +36,7 @@ def fair_train(dataloader, model, loss_fn, optimizer, trace_frequency = -1):
 """The "fair_test" function defined here is our objective function $h(\theta, \lambda) = (1-\lambda)*loss(X_{\text{group A}}\theta, y_{\text{group A}}) + \lambda*loss(X_{\text{group B}}\theta, y_{\text{group B}})$. The linear weight from the above trained model is our $\theta$."""
 
 # Test function
-def fair_test(dataloader, model, loss_fn, lam):
+def fair_test(dataloader, model, loss_fn, lam, device="cpu"):
     model.eval() # important
     with torch.no_grad():  # makes sure we don't corrupt gradients and is faster
         for batch, (X_test, y_test) in enumerate(dataloader):
