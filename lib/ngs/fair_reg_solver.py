@@ -8,7 +8,7 @@ def fair_train(dataloader, model, loss_fn, optimizer, device="cpu", trace_freque
     # size = len(dataloader.dataset)
     model.train()
     # here, the "batch" notion takes care of randomization
-    for batch, (X_train, y_train) in enumerate(dataloader):
+    for X_train, y_train in dataloader:
         X_train, y_train = X_train.to(device), y_train.to(device)
         # print(batch, len(X_train))
         X_major = X_train[y_train == 1]
@@ -39,7 +39,7 @@ def fair_train(dataloader, model, loss_fn, optimizer, device="cpu", trace_freque
 def fair_test(dataloader, model, loss_fn, lam, device="cpu"):
     model.eval() # important
     with torch.no_grad():  # makes sure we don't corrupt gradients and is faster
-        for batch, (X_test, y_test) in enumerate(dataloader):
+        for X_test, y_test in dataloader:
             X_test, y_test = X_test.to(device), y_test.to(device)
             
             X_major = X_test[y_test == 1]
