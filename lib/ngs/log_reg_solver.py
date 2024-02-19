@@ -1,11 +1,4 @@
 import torch
-device = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
-    else "cpu"
-)
 
 """The "train" function executes optimization on the input dataset w.r.t. the input loss function with the input optimizer on the ridge-regularized regression objective $h(\theta, \lambda) = (1-\lambda)BCE(X\theta, y) + \frac{\lambda}{2}\|\theta\|^2$. We will use the pytorch built-in SGD optimizer later, but note that this optimizer is actually just a deterministic gradient descent program.
 
@@ -15,7 +8,7 @@ To speed up, we use a batch of data points to replace a single data point at eac
 """
 
 # trace_frequency is measured in number of batches. -1 means don't print
-def train(dataloader, model, loss_fn, optimizer, trace_frequency = -1):
+def train(dataloader, model, loss_fn, optimizer, device="cpu", trace_frequency = -1):
     # size = len(dataloader.dataset)
     model.train()
     # here, the "batch" notion takes care of randomization
@@ -41,7 +34,7 @@ def train(dataloader, model, loss_fn, optimizer, trace_frequency = -1):
 """The "test" function defined here is our objective function $h(\theta, \lambda) = (1-\lambda)BCE(X\theta, y) + \frac{\lambda}{2}\|\theta\|^2$. The linear weight from the above trained model is our $\theta$."""
 
 # Test function
-def test(dataloader, model, loss_fn, lam):
+def test(dataloader, model, loss_fn, lam, device="cpu"):
     model.eval() # important
     with torch.no_grad():  # makes sure we don't corrupt gradients and is faster
         for batch, (X_test, y_test) in enumerate(dataloader):
