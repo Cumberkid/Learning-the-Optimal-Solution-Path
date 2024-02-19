@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch.optim.lr_scheduler import StepLR
+from lib.scheduler import AlphaT_MinLR_Scheduler
 from lib.ngs.log_reg_module import Logistic_Regression
 from lib.ngs.log_reg_solver import train, test
 from lib.ngs.fair_reg_solver import fair_train, fair_test
@@ -20,23 +21,25 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
         true_loss = true_loss_list[i]
         lam = lam_max - i * fine_delta_lam
         # print(f"nearest i = {i}\t lam = {lam}")
-        
+    scheduler = None    
     model.reg_param = lam
     if diminish:
         # Define the learning rate scheduler
         scheduler = StepLR(optimizer, step_size=dim_step, gamma=gamma)  # Decrease LR by a factor of gamma every dim_step epochs
         for param_group in optimizer.param_groups:
             param_group['lr'] = init_lr  
-        
+
+    if SGD:
+        scheduler = AlphaT_MinLR_Scheduler(optimizer, init_lr, alpha)
     early_stop = False
     itr = 0
     for t in range(epochs):
-        if SGD:
-            # shrink learning rate:
-            lr = min([init_lr, alpha/(t+1)])
-            optimizer.zero_grad()
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
+        # if SGD:
+        #     # shrink learning rate:
+        #     lr = min([init_lr, alpha/(t+1)])
+        #     optimizer.zero_grad()
+        #     for param_group in optimizer.param_groups:
+        #         param_group['lr'] = lr
                 
         if obj == "logit":
             train(trainDataLoader, model, loss_fn, optimizer, device)
@@ -59,7 +62,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
                     early_stop = True
                     break  # Early stop
                 
-        if diminish:
+        if scheduler is not None:
             # Update the learning rate
             scheduler.step()
             
