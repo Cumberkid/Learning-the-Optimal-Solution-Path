@@ -5,20 +5,12 @@ from lib.ngs.log_reg_module import Logistic_Regression
 from lib.ngs.log_reg_solver import train, test
 from lib.ngs.fair_reg_solver import fair_train, fair_test
 
-device = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
-    else "cpu"
-)
-
 """# Naive Grid Search"""
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoader, data_input_dim,
                  obj=None, alpha=1, init_lr=0.1, diminish=False, gamma=0.1, dim_step=30, SGD=False, 
-                 testDataLoader=None, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None):
+                 testDataLoader=None, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, device="cpu"):
     # performs early-stop if the true solution path is known                
     if true_loss_list is not None:
         # true loss
@@ -47,17 +39,17 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
                 param_group['lr'] = lr
                 
         if obj == "logit":
-            train(trainDataLoader, model, loss_fn, optimizer)
+            train(trainDataLoader, model, loss_fn, optimizer, device)
         elif obj == "fairness":
-            fair_train(trainDataLoader, model, loss_fn, optimizer)
+            fair_train(trainDataLoader, model, loss_fn, optimizer, device)
             
         if true_loss_list is not None:
             if (t+1) % 10 == 0:
                 # do an accuracy check
                 if obj == "logit":
-                    approx_loss = test(testDataLoader, model, loss_fn, lam)
+                    approx_loss = test(testDataLoader, model, loss_fn, lam, device)
                 elif obj == "fairness":
-                    approx_loss = fair_test(testDataLoader, model, loss_fn, lam)
+                    approx_loss = fair_test(testDataLoader, model, loss_fn, lam, device)
                     
                 error = approx_loss - true_loss
                 # print(lr, error, true_loss)
@@ -84,7 +76,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
 def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
                       data_input_dim, obj=None, lr=1e-3, alpha=1, init_lr=1, 
                       diminish=False, gamma=0.1, dim_step=30, SGD=False,
-                      testDataLoader=None, true_loss_list=None, stopping_criterion=None):
+                      testDataLoader=None, true_loss_list=None, stopping_criterion=None, device="cpu"):
     if obj is None:
         print("Please enter the objective: 'logit' or 'fairness'")
         return
@@ -118,7 +110,8 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
                                   testDataLoader=testDataLoader,
                                   true_loss_list=true_loss_list,
                                   fine_delta_lam=fine_delta_lam,
-                                  stopping_criterion=stopping_criterion)
+                                  stopping_criterion=stopping_criterion,
+                                  device=device)
         weights.append(model.linear.weight.clone().data.cpu().numpy()[0])
         intercepts.append(model.linear.bias.clone().data.cpu().numpy()[0])
         # print(model.linear.weight)
