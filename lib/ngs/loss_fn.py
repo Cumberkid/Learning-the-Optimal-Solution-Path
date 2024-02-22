@@ -1,7 +1,7 @@
 def reg_logit(lam, X, y, model):
     pred = model(X)
     loss = (1 - lam) * model.criterion(pred.view(-1, 1), y.view(-1, 1))
-    loss += lam * 0.5 * model.reg_term
+    loss += lam * 0.5 * model.ridge_term
     return loss
 
 def weighted_logit(lam, X, y, model):
@@ -17,6 +17,6 @@ def weighted_logit(lam, X, y, model):
     # Fair loss function
     loss = (1 - lam) * model.criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
     loss += lam * model.criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
-    # loss += 0.5 * model.reg_term
+    loss += 0.5 * model.ridge_term
 
     return loss
