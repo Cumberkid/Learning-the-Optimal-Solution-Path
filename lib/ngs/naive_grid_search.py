@@ -8,7 +8,7 @@ from lib.ngs.reg_solver import train, test
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoader,
-                 obj=None, alpha=1, init_lr=0.1, diminish=False, gamma=0.1, dim_step=30, SGD=False,
+                 alpha=1, init_lr=0.1, diminish=False, gamma=0.1, dim_step=30, SGD=False,
                  testDataLoader=None, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, device="cpu"):
     # performs early-stop if the true solution path is known                
     if true_loss_list is not None:
