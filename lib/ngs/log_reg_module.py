@@ -20,7 +20,7 @@ class Logistic_Regression(nn.Module):
         return self.linear(x)
 
     def criterion(self, output, target):
-        criterion = torch.nn.BCELoss()
+        criterion = torch.nn.BCEWithLogitsLoss()
         return criterion(output, target)
         
     def ridge_term(self):
