@@ -7,7 +7,7 @@ class Logistic_Regression(nn.Module):
     def __init__(self, input_dim, output_dim, reg_param, init_weight, init_intercept):
         super(Logistic_Regression, self).__init__()
         self.linear = nn.Linear(input_dim, output_dim, bias=True)
-        self.actv = nn.Sigmoid()
+        # self.actv = nn.Sigmoid()
         self.reg_param = reg_param
         
         # initialize for better performance
@@ -16,7 +16,12 @@ class Logistic_Regression(nn.Module):
           self.linear.bias.data.fill_(init_intercept)
           
     def forward(self, x):
-        return self.actv(self.linear(x))
+        # return self.actv(self.linear(x))
+        return self.linear(x)
+
+    def criterion(self, output, target):
+        criterion = torch.nn.BCELoss()
+        return criterion(output, target)
         
     def ridge_term(self):
         return self.linear.weight.norm(p=2)**2 + self.linear.bias.norm(p=2)**2

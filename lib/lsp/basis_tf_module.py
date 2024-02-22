@@ -20,6 +20,6 @@ class Basis_TF_SGD(nn.Module):
               self.linear.weight.data.fill_(0)
               
     # model takes input lambda and outputs theta
-    def forward(self, lam):
-        phi = self.basis_fn(lam, self.basis_dim)
+    def forward(self, lam, device='cpu'):
+        phi = self.basis_fn(lam, self.basis_dim, device)
         return self.linear(phi)

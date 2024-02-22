@@ -1,23 +1,13 @@
 import torch
-from torch import nn
 from torch.optim.lr_scheduler import StepLR
 from lib.lsp.basis_tf_module import Basis_TF_SGD
-from lib.lsp.log_reg_solver_sgd import train_SGD, test_SGD
-from lib.lsp.fair_reg_solver_sgd import fair_train_SGD, fair_test_SGD
-from lib.lsp.utils_sgd import get_sup_error_SGD
+from lib.lsp.reg_solver_lsp import train_lsp
+from lib.lsp.utils_lsp import get_sup_error_SGD
 
-device = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
-    else "cpu"
-)
-
-def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, true_losses, lr=1e-3, alpha=1, init_lr=0.1, diminish=False, gamma=0.1, dim_step=30, SGD=False, obj=None, init_weight=None, intercept=True, record_frequency=100, trace_frequency=-1):
-    if obj is None:
-        print("Please enter the objective: 'logit' or 'fairness'")
-        return
+def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, testDataLoader,
+                        loss_fn, lam_min, lam_max, true_losses, lr=1e-3, alpha=1, init_lr=0.1,
+                        diminish=False, gamma=0.1, dim_step=30, SGD=False, init_weight=None,
+                        intercept=True, record_frequency=100, device='cpu', trace_frequency=-1):
     # build the model
     model = Basis_TF_SGD(input_dim, basis_dim, phi_lam, init_weight=init_weight, intercept=intercept).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
@@ -35,10 +25,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, 
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
                 
-        if obj == "logit":
-            train_SGD(trainDataLoader, model, loss_fn, optimizer)
-        elif obj == "fairness":
-            fair_train_SGD(trainDataLoader, model, loss_fn, optimizer)
+        train_lsp(trainDataLoader, model, loss_fn, optimizer, device)
             
         if diminish:
             # Update the learning rate
@@ -47,7 +34,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, 
         if (t+1) % record_frequency == 0:
             num_itr_history.append(t+1)
             sup_err = get_sup_error_SGD(lam_min, lam_max, true_losses,
-                                        model, testDataLoader, loss_fn, obj=obj)
+                                        model, testDataLoader, loss_fn, device)
             sup_err_history.append(sup_err)
             if (trace_frequency > 0) & ((t+1) % trace_frequency == 0):
                 print(f"--------approximate solution path for # itr = {t+1} complete--------")
