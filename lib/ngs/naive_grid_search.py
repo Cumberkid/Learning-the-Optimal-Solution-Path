@@ -21,20 +21,23 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
         # print(f"nearest i = {i}\t lam = {lam}")
 
     model.reg_param = lam
-    if diminish:
-        # define the learning rate scheduler
-        scheduler = StepLR(optimizer, step_size=dim_step, gamma=gamma)  # Decrease LR by a factor of gamma every dim_step epochs
+
+    if diminish or SGD:
         # reset learning rate for the grid
         for param_group in optimizer.param_groups:
             param_group['lr'] = init_lr
+                   
+    if diminish:
+        # define the learning rate scheduler
+        scheduler = StepLR(optimizer, step_size=dim_step, gamma=gamma)  # Decrease LR by a factor of gamma every dim_step epochs
 
     early_stop = False
     itr = 0
+    t_0 = round(alpha/init_lr)
     for t in range(epochs):
-        if SGD:
+        if SGD and (t+1 > t_0):
             # shrink learning rate:
-            lr = min([init_lr, alpha/(t+1)])
-            optimizer.zero_grad()
+            lr = alpha/(t+1)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
 
