@@ -35,7 +35,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
     itr = 0
     t_0 = round(alpha/init_lr)
     for t in range(epochs):
-        if SGD and (t+1 > t_0):
+        if SGD and (t+1 >= t_0):
             # shrink learning rate:
             lr = alpha/(t+1)
             for param_group in optimizer.param_groups:
