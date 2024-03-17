@@ -34,19 +34,29 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
     early_stop = False
     itr = 0
     t_0 = round(alpha/init_lr)
+    avg_weight = model.linear.weight.clone().detach()[0] # weighted averaging sum
+    avg_intercept = model.linear.bias.clone().detach()[0]
+                   
     for t in range(epochs):
-        if SGD and (t+1 > t_0):
+        # if SGD and (t+2 > t_0):
+        if SGD:
             # shrink learning rate:
-            lr = alpha/(t+1)
+            lr = alpha/(t+2)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
 
         train(trainDataLoader, model, loss_fn, optimizer, device)
-            
+        rho = 2 / (t+3)
+        avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()[0]
+        avg_intercept = (1-rho) * avg_intercept + rho * model.linear.bias.clone().detach()[0]
+      
         if true_loss_list is not None:
             if (t+1) % 10 == 0:
                 # do an accuracy check
-                approx_loss = test(testDataLoader, model, loss_fn, lam, device)
+                with torch.no_grad():
+                    avg_model.linear.weight.copy_(avg_weight)
+                    avg_model.linear.bias.copy_(avg_intercept)
+                approx_loss = test(testDataLoader, avg_model, loss_fn, lam, device)
                     
                 error = approx_loss - true_loss
                 # print(lr, error, true_loss)
