@@ -7,7 +7,7 @@ from lib.ngs.reg_solver import train, test
 """# Naive Grid Search"""
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
-def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoader,
+def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, trainDataLoader,
                  alpha=1, init_lr=0.1, diminish=False, gamma=0.1, dim_step=30, SGD=False,
                  testDataLoader=None, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, device="cpu"):
     # performs early-stop if the true solution path is known                
@@ -21,7 +21,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
         # print(f"nearest i = {i}\t lam = {lam}")
 
     model.reg_param = lam
-
+    avg_model.reg_param = lam
     if diminish or SGD:
         # reset learning rate for the grid
         for param_group in optimizer.param_groups:
@@ -46,7 +46,8 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer, trainDataLoade
                 param_group['lr'] = lr
 
         train(trainDataLoader, model, loss_fn, optimizer, device)
-        rho = 2 / (t+3)
+      
+        rho = 2 / (t+3) #compute weighted averaging sum
         avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()[0]
         avg_intercept = (1-rho) * avg_intercept + rho * model.linear.bias.clone().detach()[0]
       
@@ -99,12 +100,13 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     weight = torch.zeros(data_input_dim)
     intercept = 0
     model = Logistic_Regression(data_input_dim, 1, lam_max, weight, intercept).to(device)
+    avg_model = Logistic_Regression(data_input_dim, 1, lam_max, weight, intercept).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
     optimizer.zero_grad()
     
     for lam in lambdas:
         # print(f"Running model on lambda = {lam}")
-        itr = GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, optimizer,
+        itr = GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer,
                            trainDataLoader=trainDataLoader,
                            alpha=alpha,
                            init_lr=init_lr, diminish=diminish,
@@ -114,10 +116,10 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
                            fine_delta_lam=fine_delta_lam,
                            stopping_criterion=stopping_criterion,
                            device=device)
-        weights.append(model.linear.weight.clone().data.cpu().numpy()[0])
-        intercepts.append(model.linear.bias.clone().data.cpu().numpy()[0])
+        weights.append(avg_model.linear.weight.clone().data.cpu().numpy()[0])
+        intercepts.append(avg_model.linear.bias.clone().data.cpu().numpy()[0])
         # print(model.linear.weight)
-        reg_params.append(model.reg_param)
+        reg_params.append(avg_model.reg_param)
         total_itr += itr
         # print(total_itr)
         
