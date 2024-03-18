@@ -9,7 +9,8 @@ from lib.ngs.reg_solver import train, test
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, trainDataLoader,
                  alpha=1, init_lr=0.1, diminish=False, gamma=0.1, dim_step=30, SGD=False,
-                 testDataLoader=None, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, device="cpu"):
+                 testDataLoader=None, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, 
+                 record_frequency=10, device="cpu"):
     # performs early-stop if the true solution path is known                
     if true_loss_list is not None:
         # true loss
@@ -53,7 +54,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
         avg_intercept = (1-rho) * avg_intercept + rho * model.linear.bias.clone().detach()[0]
       
         if true_loss_list is not None:
-            if (t+1) % trace_frequency == 0:
+            if (t+1) % record_frequency == 0:
                 # do an accuracy check
                 with torch.no_grad():
                     avg_model.linear.weight.copy_(avg_weight)
@@ -85,7 +86,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
                       data_input_dim, lr=1e-3, alpha=1, init_lr=1,
                       diminish=False, gamma=0.1, dim_step=30, SGD=False, 
                       testDataLoader=None, true_loss_list=None, stopping_criterion=None, 
-                      trace_frequency=10, device="cpu"):
+                      record_frequency=10, device="cpu"):
     fine_delta_lam = None
     if true_loss_list is not None:
         fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list) - 1)
@@ -118,7 +119,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
                            true_loss_list=true_loss_list,
                            fine_delta_lam=fine_delta_lam,
                            stopping_criterion=stopping_criterion,
-                           trace_frequency=trace_frequency,
+                           record_frequency=record_frequency,
                            device=device)
         weights.append(model.linear.weight.clone().data.cpu().numpy()[0])
         intercepts.append(model.linear.bias.clone().data.cpu().numpy()[0])
