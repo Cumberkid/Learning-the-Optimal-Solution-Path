@@ -35,6 +35,11 @@ def weighted_logit(lam, X, y, model, device="cpu"):
     # fair loss function
     loss = (1 - lam) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
     loss += lam * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+
+    return loss
+
+def reg_weighted_logit(lam, X, y, model, device="cpu"):
+    loss = weighted_logit(lam, X, y, model, device)
     loss += 0.5 * theta.norm(p=2) ** 2
 
     return loss
