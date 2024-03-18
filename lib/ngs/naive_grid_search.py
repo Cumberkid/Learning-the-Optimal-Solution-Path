@@ -22,6 +22,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
 
     model.reg_param = lam
     avg_model.reg_param = lam
+                   
     if diminish or SGD:
         # reset learning rate for the grid
         for param_group in optimizer.param_groups:
@@ -34,7 +35,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
     early_stop = False
     itr = 0
     # t_0 = round(alpha/init_lr)
-    avg_weight = model.linear.weight.clone().detach()[0] # weighted averaging sum
+    avg_weight = model.linear.weight.clone().detach()[0] # weighted averaging sum initialized
     avg_intercept = model.linear.bias.clone().detach()[0]
                    
     for t in range(epochs):
@@ -92,6 +93,8 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     reg_params = []
     weights = []
     intercepts = []
+    avg_weights = []
+    avg_intercepts = []
     total_itr = 0
     # create a list of lambda's
     lambdas = np.linspace(lam_max, lam_min, num_grid)
