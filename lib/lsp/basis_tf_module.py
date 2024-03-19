@@ -11,14 +11,14 @@ class Basis_TF_SGD(nn.Module):
         self.linear = nn.Linear(self.basis_dim, self.feature_dim + 1, bias=False)
         self.basis_fn = basis_fn
         self.intercept = intercept
-        self.linear.bias.data.fill_(init_intercept)
 
         # initialize for better performance
         with torch.no_grad():
-          if init_weight is not None:
-              self.linear.weight.copy_(init_weight)
-          else:
-              self.linear.weight.data.fill_(0)
+            self.linear.bias.data.fill_(init_intercept)
+            if init_weight is not None:
+                self.linear.weight.copy_(init_weight)
+            else:
+                self.linear.weight.data.fill_(0)
               
     # model takes input lambda and outputs theta
     def forward(self, lam, device='cpu'):
