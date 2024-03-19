@@ -8,7 +8,7 @@ from lib.ngs.reg_solver import train, test
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, trainDataLoader,
-                 alpha=1, init_lr=0.1, diminish=False, gamma=0.1, dim_step=30, SGD=False,
+                 alpha=1, init_lr=0.1, SGD=False,
                  testDataLoader=None, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, 
                  record_frequency=10, device="cpu"):
     # performs early-stop if the true solution path is known                
@@ -22,22 +22,15 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
         # print(f"nearest i = {i}\t lam = {lam}")
 
     model.reg_param = lam
-    avg_model.reg_param = lam
                    
-    if diminish or SGD:
-        # reset learning rate for the grid
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = init_lr
-                   
-    if diminish:
-        # define the learning rate scheduler
-        scheduler = StepLR(optimizer, step_size=dim_step, gamma=gamma)  # Decrease LR by a factor of gamma every dim_step epochs
+    if SGD:
+        avg_model.reg_param = lam
+        avg_weight = model.linear.weight.clone().detach()[0] # weighted averaging sum initialized
+        avg_intercept = model.linear.bias.clone().detach()[0]
 
     early_stop = False
     itr = 0
     # t_0 = round(alpha/init_lr)
-    avg_weight = model.linear.weight.clone().detach()[0] # weighted averaging sum initialized
-    avg_intercept = model.linear.bias.clone().detach()[0]
                    
     for t in range(epochs):
         # if SGD and (t+2 > t_0):
@@ -49,17 +42,21 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
 
         train(trainDataLoader, model, loss_fn, optimizer, device)
       
-        rho = 2 / (t+3) #compute weighted averaging sum
-        avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()[0]
-        avg_intercept = (1-rho) * avg_intercept + rho * model.linear.bias.clone().detach()[0]
+        if SGD:
+            rho = 2 / (t+3) #compute weighted averaging sum
+            avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()[0]
+            avg_intercept = (1-rho) * avg_intercept + rho * model.linear.bias.clone().detach()[0]
       
         if true_loss_list is not None:
             if (t+1) % record_frequency == 0:
                 # do an accuracy check
-                with torch.no_grad():
-                    avg_model.linear.weight.copy_(avg_weight)
-                    avg_model.linear.bias.copy_(avg_intercept)
-                approx_loss = test(testDataLoader, avg_model, loss_fn, lam, device)
+                if SGD:
+                    with torch.no_grad():
+                        avg_model.linear.weight.copy_(avg_weight)
+                        avg_model.linear.bias.copy_(avg_intercept)
+                    approx_loss = test(testDataLoader, avg_model, loss_fn, lam, device)
+                else:
+                    approx_loss = test(testDataLoader, model, loss_fn, lam, device)
                     
                 error = approx_loss - true_loss
                 # stopping criterion
@@ -67,10 +64,6 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
                     itr += (t+1)
                     early_stop = True
                     break  # Early stop
-                
-        if diminish:
-            # Update the learning rate
-            scheduler.step()
             
     if not early_stop:
         itr += epochs
@@ -83,8 +76,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
 # from lam_min to lam_max
 # returns a list of trained models
 def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
-                      data_input_dim, lr=1e-3, alpha=1, init_lr=1,
-                      diminish=False, gamma=0.1, dim_step=30, SGD=False, 
+                      data_input_dim, lr=1e-3, alpha=1, init_lr=1, SGD=False, 
                       testDataLoader=None, true_loss_list=None, stopping_criterion=None, 
                       record_frequency=10, device="cpu"):
     fine_delta_lam = None
@@ -113,21 +105,25 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
         itr = GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer,
                            trainDataLoader=trainDataLoader,
                            alpha=alpha,
-                           init_lr=init_lr, diminish=diminish,
-                           gamma=gamma, dim_step=dim_step, SGD=SGD,
+                           init_lr=init_lr, SGD=SGD,
                            testDataLoader=testDataLoader,
                            true_loss_list=true_loss_list,
                            fine_delta_lam=fine_delta_lam,
                            stopping_criterion=stopping_criterion,
                            record_frequency=record_frequency,
                            device=device)
-        weights.append(model.linear.weight.clone().data.cpu().numpy()[0])
-        intercepts.append(model.linear.bias.clone().data.cpu().numpy()[0])
-        avg_weights.append(avg_model.linear.weight.clone().data.cpu().numpy()[0])
-        avg_intercepts.append(avg_model.linear.bias.clone().data.cpu().numpy()[0])
+        if SGD:
+            avg_weights.append(avg_model.linear.weight.clone().data.cpu().numpy()[0])
+            avg_intercepts.append(avg_model.linear.bias.clone().data.cpu().numpy()[0])
+        else:
+            weights.append(model.linear.weight.clone().data.cpu().numpy()[0])
+            intercepts.append(model.linear.bias.clone().data.cpu().numpy()[0])                  
         # print(model.linear.weight)
-        reg_params.append(avg_model.reg_param)
+        reg_params.append(model.reg_param)
         total_itr += itr
         # print(total_itr)
-        
-    return total_itr, reg_params, intercepts, weights, avg_intercepts, avg_weights
+
+    if SGD:
+        return total_itr, reg_params, avg_intercepts, avg_weights
+    else:
+        return total_itr, reg_params, intercepts, weights
