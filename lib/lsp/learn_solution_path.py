@@ -6,17 +6,16 @@ from lib.lsp.utils_lsp import get_sup_error_SGD
 
 def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, testDataLoader,
                         loss_fn, lam_min, lam_max, true_losses, lr=1e-3, alpha=1, init_lr=0.1,
-                        diminish=False, gamma=0.1, dim_step=30, SGD=False, init_weight=None, init_intercept=0,
+                        diminish=False, gamma=0.1, dim_step=30, SGD=False, init_weight=None, 
                         intercept=True, record_frequency=100, device='cpu', trace_frequency=-1):
     # build the model
-    model = Basis_TF_SGD(input_dim, basis_dim, phi_lam, init_weight=init_weight, init_intercept=init_intercept, intercept=intercept).to(device)
-    avg_model = Basis_TF_SGD(input_dim, basis_dim, phi_lam, init_weight=init_weight, init_intercept=init_intercept, intercept=intercept).to(device)
+    model = Basis_TF_SGD(input_dim, basis_dim, phi_lam, init_weight=init_weight, intercept=intercept).to(device)
+    avg_model = Basis_TF_SGD(input_dim, basis_dim, phi_lam, init_weight=init_weight, intercept=intercept).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
     optimizer.zero_grad()
                           
     # initialize weighted averaging sum
     avg_weight = init_weight
-    avg_intercept = intercept
                           
     sup_err_history = []
     num_itr_history = []
@@ -35,7 +34,6 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, 
         train_lsp(trainDataLoader, model, loss_fn, optimizer, device)
         rho = 2 / (t+3)
         avg_weight = (1-rho) * avg_weight + rho * train_model.linear.weight.clone().detach()[0]
-        avg_intercept = (1-rho) * avg_intercept + rho * train_model.linear.bias.clone().detach()[0]
             
         if diminish:
             # Update the learning rate
@@ -45,7 +43,6 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, 
             num_itr_history.append(t+1)
             with torch.no_grad():
                 avg_model.linear.weight.copy_(avg_weight)
-                avg_model.linear.bias.copy_(avg_intercept)
             sup_err = get_sup_error_SGD(lam_min, lam_max, true_losses,
                                         avg_model, testDataLoader, loss_fn, device)
             sup_err_history.append(sup_err)
