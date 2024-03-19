@@ -4,7 +4,7 @@ from torch import nn
 # this initializes with random weights. Need to either set a seed or force initialization somewhere for reproducibility.
 # automatically fits an intercept. To turn off intercept, set bias=False in nn.Linear()
 class Basis_TF_SGD(nn.Module):
-    def __init__(self, feature_dim, basis_dim, basis_fn, init_weight=None, init_intercept=0, intercept=True):
+    def __init__(self, feature_dim, basis_dim, basis_fn, init_weight=None, intercept=True):
         super(Basis_TF_SGD, self).__init__()
         self.feature_dim = feature_dim
         self.basis_dim = basis_dim
@@ -14,7 +14,6 @@ class Basis_TF_SGD(nn.Module):
 
         # initialize for better performance
         with torch.no_grad():
-            self.linear.bias.data.fill_(init_intercept)
             if init_weight is not None:
                 self.linear.weight.copy_(init_weight)
             else:
