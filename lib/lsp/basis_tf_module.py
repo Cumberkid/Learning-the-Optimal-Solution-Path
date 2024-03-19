@@ -11,7 +11,7 @@ class Basis_TF_SGD(nn.Module):
         self.linear = nn.Linear(self.basis_dim, self.feature_dim + 1, bias=False)
         self.basis_fn = basis_fn
         self.intercept = intercept
-        self.linear.bias.copy_(init_intercept)
+        self.linear.bias.data.fill_(init_intercept)
 
         # initialize for better performance
         with torch.no_grad():
