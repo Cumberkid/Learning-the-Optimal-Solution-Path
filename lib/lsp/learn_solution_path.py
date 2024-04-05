@@ -33,7 +33,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, 
                 
         train_lsp(trainDataLoader, model, loss_fn, optimizer, device)
         rho = 2 / (t+3)
-        avg_weight = (1-rho) * avg_weight + rho * train_model.linear.weight.clone().detach()[0]
+        avg_weight = (1-rho) * avg_weight + rho * train_model.linear.weight.clone().detach()
             
         if diminish:
             # Update the learning rate
