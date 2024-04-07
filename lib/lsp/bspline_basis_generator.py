@@ -1,3 +1,5 @@
+import torch
+import math
 import numpy as np
 from scipy.interpolate import BSpline
 
@@ -22,15 +24,11 @@ class SplineBasis:
       return(len(self.basis))
 
 
-def C_bspline(numKnot, numPts):
+# cubic bspline takes basis_dim at least 6
+def bspline(lam, basis_dim, device='cpu'):
+    order = 4 # 4 for cubic
+    numKnot = basis_dim + 2 - order
     knots = np.linspace(0, 1, numKnot)
-    spline_basis = SplineBasis(knots, 4)
-    lams = np.linspace(0, 1, numPts)
-    C = 0
-    for lam in lams:
-        v = spline_basis(lam)
-        out = np.outer(v, v)
-        eig = max(np.linalg.eigvals(out))
-        C = max(C, eig)
-
-    return C
+    spline_basis = SplineBasis(knots, order)
+    vec = torch.tensor(spline_basis(lam))
+    return vec.to(device)
