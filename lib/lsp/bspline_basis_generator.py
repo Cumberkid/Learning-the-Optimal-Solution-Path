@@ -25,7 +25,7 @@ class SplineBasis:
 
 
 # cubic bspline takes basis_dim at least 6
-def bspline(lam, basis_dim, device='cpu'):
+def cubic_bspline(lam, basis_dim, device='cpu'):
     order = 4 # 4 for cubic
     numKnot = basis_dim + 2 - order
     knots = np.linspace(0, 1, numKnot)
