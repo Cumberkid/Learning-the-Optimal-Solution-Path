@@ -6,9 +6,7 @@ from scipy.special import legendre
 def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
     # Transform the lam to [-1, 1] interval
     lam_transformed = 2 * lam - 1
-    vec = torch.zeros(basis_dim)
-    for i in range(basis_dim):
-        vec[i] = math.sqrt(2*i+1) * legendre(i)(lam_transformed)
+    vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed) for i in range(basis_dim)])
     return vec.to(device)
 
 
