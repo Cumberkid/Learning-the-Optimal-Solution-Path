@@ -22,6 +22,6 @@ def weighted_logit(lam, X, y, model):
 
 def reg_weighted_logit(lam, X, y, model):
     loss = weighted_logit(lam, X, y, model)
-    loss += 0.5 * model.ridge_term()
+    loss += 0.25 * 0.5 * model.ridge_term()
 
     return loss
