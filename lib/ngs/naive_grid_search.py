@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from torch.optim.lr_scheduler import StepLR
 from lib.ngs.log_reg_module import Logistic_Regression
 from lib.ngs.reg_solver import train, test
 
