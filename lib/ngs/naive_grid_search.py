@@ -8,9 +8,9 @@ from lib.ngs.reg_solver import train, test
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, trainDataLoader,
-                 alpha=1, init_lr=0.1, SGD=False,
+                 step_size=None, const=1, SGD=False,
                  testDataLoader=None, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, 
-                 record_frequency=10, device="cpu"):
+                 record_frequency=5, device="cpu"):
     # performs early-stop if the true solution path is known                
     if true_loss_list is not None:
         # true loss
@@ -30,15 +30,13 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
 
     early_stop = False
     itr = 0
-    # t_0 = round(alpha/init_lr)
                    
     for t in range(epochs):
         # if SGD and (t+2 > t_0):
         if SGD:
             # shrink learning rate:
-            lr = alpha/(t+2)
             for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
+                param_group['lr'] = step_size(t, const)
 
         train(trainDataLoader, model, loss_fn, optimizer, device)
       
@@ -76,9 +74,9 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
 # from lam_min to lam_max
 # returns a list of trained models
 def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
-                      data_input_dim, lr=1e-3, alpha=1, init_lr=1, SGD=False, 
+                      data_input_dim, lr=1e-3, step_size=None, const=1, SGD=False, 
                       testDataLoader=None, true_loss_list=None, stopping_criterion=None, 
-                      record_frequency=10, device="cpu"):
+                      record_frequency=5, device="cpu"):
     fine_delta_lam = None
     if true_loss_list is not None:
         fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list) - 1)
@@ -104,8 +102,8 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
         # print(f"Running model on lambda = {lam}")
         itr = GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer,
                            trainDataLoader=trainDataLoader,
-                           alpha=alpha,
-                           init_lr=init_lr, SGD=SGD,
+                           step_size=step_size,
+                           const=const, SGD=SGD,
                            testDataLoader=testDataLoader,
                            true_loss_list=true_loss_list,
                            fine_delta_lam=fine_delta_lam,
