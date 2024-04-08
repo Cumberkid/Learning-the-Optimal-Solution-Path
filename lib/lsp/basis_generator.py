@@ -2,7 +2,21 @@ import torch
 import math
 import numpy as np
 from scipy.interpolate import BSpline
+from scipy.special import legendre
 
+# monomials
+def monomials(lam, basis_dim, device='cpu'):
+    vec = torch.tensor([lam**i for i in range(basis_dim)])
+    return bec.to(device)
+    
+# scaled and shifted legendre polynomials
+def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
+    # Transform the lam to [-1, 1] interval
+    lam_transformed = 2 * lam - 1
+    vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed) for i in range(basis_dim)])
+    return vec.to(device)
+
+# cubic bspline basis
 class SplineBasis:
     def __init__(self, knots, order):
       self.order = order
@@ -22,7 +36,6 @@ class SplineBasis:
 
     def numBasisFns(self):
       return(len(self.basis))
-
 
 # cubic bspline takes basis_dim at least 6
 def cubic_bspline(lam, basis_dim, device='cpu'):
