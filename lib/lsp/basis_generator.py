@@ -6,14 +6,14 @@ from scipy.special import legendre
 
 # monomials
 def monomials(lam, basis_dim, device='cpu'):
-    vec = torch.tensor([lam**i for i in range(basis_dim)])
+    vec = torch.tensor([lam**i for i in range(basis_dim)], dtype=torch.float32)
     return bec.to(device)
     
 # scaled and shifted legendre polynomials
 def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
     # Transform the lam to [-1, 1] interval
     lam_transformed = 2 * lam - 1
-    vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed) for i in range(basis_dim)])
+    vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed) for i in range(basis_dim)], dtype=torch.float32)
     return vec.to(device)
 
 # cubic bspline basis
@@ -43,5 +43,5 @@ def cubic_bspline(lam, basis_dim, device='cpu'):
     numKnot = basis_dim + 2 - order
     knots = np.linspace(0, 1, numKnot)
     spline_basis = SplineBasis(knots, order)
-    vec = torch.tensor(spline_basis(lam))
+    vec = torch.tensor(spline_basis(lam), dtype=torch.float32)
     return vec.to(device)
