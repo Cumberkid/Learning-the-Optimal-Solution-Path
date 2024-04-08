@@ -40,6 +40,6 @@ def weighted_logit(lam, X, y, model, device="cpu"):
 
 def reg_weighted_logit(lam, X, y, model, device="cpu"):
     loss = weighted_logit(lam, X, y, model, device)
-    loss += 0.5 * theta.norm(p=2) ** 2
+    loss += 0.25 * 0.5 * theta.norm(p=2) ** 2
 
     return loss
