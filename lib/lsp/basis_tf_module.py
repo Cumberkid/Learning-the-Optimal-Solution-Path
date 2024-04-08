@@ -8,9 +8,12 @@ class Basis_TF_SGD(nn.Module):
         super(Basis_TF_SGD, self).__init__()
         self.feature_dim = feature_dim
         self.basis_dim = basis_dim
-        self.linear = nn.Linear(self.basis_dim, self.feature_dim + 1, bias=False)
         self.basis_fn = basis_fn
         self.intercept = intercept
+        if self.intercept:
+            self.linear = nn.Linear(self.basis_dim, self.feature_dim + 1, bias=False)
+        else:
+            self.linear = nn.Linear(self.basis_dim, self.feature_dim, bias=False)
 
         # initialize for better performance
         with torch.no_grad():
