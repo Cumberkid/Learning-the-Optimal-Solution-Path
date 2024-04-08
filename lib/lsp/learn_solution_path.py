@@ -7,7 +7,7 @@ from lib.lsp.utils_lsp import get_sup_error_lsp
 def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, testDataLoader,
                         loss_fn, lam_min, lam_max, true_losses, lr=1e-3, diminish=False, gamma=0.1, 
                         dim_step=30, step_size=None, const=None, SGD=False, init_weight=None, 
-                        intercept=True, record_frequency=100, device='cpu', trace_frequency=-1):
+                        intercept=True, record_frequency=10, device='cpu', trace_frequency=-1):
     # build the model
     model = Basis_TF_SGD(input_dim, basis_dim, phi_lam, init_weight=init_weight, intercept=intercept).to(device)
     avg_model = Basis_TF_SGD(input_dim, basis_dim, phi_lam, init_weight=init_weight, intercept=intercept).to(device)
