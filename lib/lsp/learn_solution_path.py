@@ -40,7 +40,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, 
             scheduler.step()
             
         if (t+1) % record_frequency == 0:
-            print(model.linear.weight.clone().detach())
+            # print(model.linear.weight.clone().detach())
             num_itr_history.append(t+1)
             if SGD:
                 with torch.no_grad():
