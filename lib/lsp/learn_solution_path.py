@@ -2,7 +2,7 @@ import torch
 from torch.optim.lr_scheduler import StepLR
 from lib.lsp.basis_tf_module import Basis_TF_SGD
 from lib.lsp.reg_solver_lsp import train_lsp
-from lib.lsp.utils_lsp import get_sup_error_SGD
+from lib.lsp.utils_lsp import get_sup_error_lsp
 
 def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, testDataLoader,
                         loss_fn, lam_min, lam_max, true_losses, lr=1e-3, diminish=False, gamma=0.1, 
