@@ -1,4 +1,5 @@
 import torch
+from torch.optim.lr_scheduler import StepLR
 from lib.lsp.basis_tf_module import Basis_TF_SGD
 from lib.lsp.reg_solver_lsp import train_lsp
 from lib.lsp.utils_lsp import get_sup_error_lsp
@@ -7,7 +8,7 @@ from lib.lsp.utils_lsp import get_sup_error_lsp
 # step_size function returns the learning rate for current iteration
 # make sure to input 'distribution' or else the 
 def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, 
-                        true_losses, lr=1e-3, step_size=None, const=None, SGD=False, init_weight=None, 
+                        true_losses, lr=1e-3, diminish=False, gamma=0.1, dim_step=30, step_size=None, const=None, SGD=False, init_weight=None, 
                         intercept=True, weighted_avg=False, record_frequency=10, distribution='uniform', device='cpu', trace_frequency=-1):
     # build the model
     model = Basis_TF_SGD(input_dim, basis_dim, phi_lam, init_weight=init_weight, intercept=intercept).to(device)
@@ -22,7 +23,10 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, 
                           
     sup_err_history = []
     num_itr_history = []
-
+    if diminish:
+        # Define the learning rate scheduler
+        scheduler = StepLR(optimizer, step_size=dim_step, gamma=gamma)  # Decrease LR by a factor of gamma every dim_step epochs
+      
     for t in range(epochs):
         if step_size is not None:
             # shrink learning rate
@@ -36,7 +40,11 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, 
             avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()
         else:
             avg_weight = model.linear.weight.clone().detach()
-            
+          
+        if diminish:
+            # Update the learning rate
+            scheduler.step()
+          
         if (t+1) % record_frequency == 0:
             num_itr_history.append(t+1)
             if weighted_avg:
