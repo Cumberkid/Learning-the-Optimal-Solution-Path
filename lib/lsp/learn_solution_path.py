@@ -38,7 +38,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, 
             
         if (t+1) % record_frequency == 0:
             num_itr_history.append(t+1)
-            if weightd_avg:
+            if weighted_avg:
                 with torch.no_grad():
                     avg_model.linear.weight.copy_(avg_weight)
                 sup_err = get_sup_error_lsp(lam_min, lam_max, true_losses,
@@ -51,7 +51,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, 
                 print(f"--------approximate solution path for # itr = {t+1} complete--------")
                 print(f"# itr: {t+1}\t sup error: {sup_err}")
     if weighted_avg:
-        return num_itr_history, sup_err_history, model.linear.weight.clone().detach()
-    else:
         return num_itr_history, sup_err_history, avg_weight
+    else:
+        return num_itr_history, sup_err_history, model.linear.weight.clone().detach()
     
