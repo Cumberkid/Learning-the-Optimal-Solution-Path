@@ -30,7 +30,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, 
                 
         train_lsp(trainDataLoader, model, loss_fn, optimizer, distribution, device)
 
-        if weightd_avg and t>50: 
+        if weighted_avg and t>50: 
             rho = 2 / (t+3)
             avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()
         else:
