@@ -5,9 +5,10 @@ from lib.lsp.utils_lsp import get_sup_error_lsp
 
 # step_size function take in 2 parameters: current iteration number, and a self-defined constant 
 # step_size function returns the learning rate for current iteration
+# make sure to input 'distribution' or else the 
 def learn_solution_path(input_dim, basis_dim, phi_lam, epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, 
-                        true_losses, lr=1e-3, step_size=None, const=None, weighted_avg=False, SGD=False, init_weight=None, 
-                        intercept=True, record_frequency=10, distribution='uniform', device='cpu', trace_frequency=-1):
+                        true_losses, lr=1e-3, step_size=None, const=None, SGD=False, init_weight=None, 
+                        intercept=True, weighted_avg=False, record_frequency=10, distribution='uniform', device='cpu', trace_frequency=-1):
     # build the model
     model = Basis_TF_SGD(input_dim, basis_dim, phi_lam, init_weight=init_weight, intercept=intercept).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
