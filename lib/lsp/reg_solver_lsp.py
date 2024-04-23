@@ -18,12 +18,16 @@ def train_lsp(dataloader, model, loss_fn, optimizer, distribution='uniform', dev
         # Backpropagation
         optimizer.zero_grad()
         loss.backward()
+        
+        grad = model.linear.weight.grad.clone().detach()
+        
         optimizer.step()
         
         # if (trace_frequency > 0) & (batch % trace_frequency == 0):
         #     loss, current = loss.item(), (batch + 1) * len(X_train)
             #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-
+    return grad
+    
 # Test function
 def test_lsp(dataloader, model, loss_fn, lam, device='cpu'):
     model.eval() #important
