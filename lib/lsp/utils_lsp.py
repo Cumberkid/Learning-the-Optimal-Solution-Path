@@ -2,7 +2,7 @@ import numpy as np
 from lib.lsp.reg_solver_lsp import test_lsp
 
 # return a list of loss computed on a specified grid over the solution path
-def get_losses_lsp(model, lam_min, lam_max, num_grid, data_loader, loss_fn, device='cpu'):
+def get_losses_lsp(lam_min, lam_max, num_grid, model, data_loader, loss_fn, device='cpu'):
     lambdas = np.linspace(lam_max, lam_min, num_grid)
     losses = []
     for lam in lambdas:
@@ -11,7 +11,7 @@ def get_losses_lsp(model, lam_min, lam_max, num_grid, data_loader, loss_fn, devi
     return losses
     
 # return the absolute errors compared to the true loss accross the solution path  
-def get_errs_lsp(model, lam_min, lam_max, true_loss_list, data_loader, loss_fn, device='cpu'):
+def get_errs_lsp(lam_min, lam_max, true_loss_list, model, data_loader, loss_fn, device='cpu'):
     losses = get_losses_lsp(model, lam_min, lam_max, len(true_loss_list), data_loader, loss_fn, device)
     return losses - true_loss_list
     
