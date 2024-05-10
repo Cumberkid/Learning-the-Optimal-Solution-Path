@@ -37,8 +37,11 @@ def weighted_logit(lam, X, y, model):
     pred_minor = model(X_minor)
 
     # reweighted loss function with bias correction due to mini-batching
-    loss = (1 - lam) * (len(X)/len(X_major)) * model.criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
-    loss += lam * (len(X)/len(X_minor)) * model.criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+    # full data size = 1000
+    # positive = 956
+    # negative = 44
+    loss = (1 - lam) * (1000/956) * model.criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
+    loss += lam * (1000/44) * model.criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
     loss = loss/len(X)
 
     return loss
