@@ -97,7 +97,6 @@ def reg_weighted_logit(lam, X, y, model, device="cpu"):
     criterion = torch.nn.BCEWithLogitsLoss(reduction="sum")
     loss = (1 - lam) * (len(X)/len(X_major)) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
     loss += lam * (len(X)/len(X_minor)) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
-    loss = loss/len(X)
-    loss += 0.25 * 0.5 * theta.norm(p=2) ** 2
+    loss = loss/len(X) + 0.25 * 0.5 * theta.norm(p=2) ** 2
 
     return loss
