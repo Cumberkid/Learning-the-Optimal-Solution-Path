@@ -39,10 +39,13 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
 
         train(trainDataLoader, model, loss_fn, optimizer, device)
       
-        if SGD:
+        if SGD and t>5: 
             rho = 2 / (t+3) #compute weighted averaging sum
             avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()[0]
             avg_intercept = (1-rho) * avg_intercept + rho * model.linear.bias.clone().detach()[0]
+        else:
+            avg_weight = model.linear.weight.clone().detach()[0]
+            avg_intercept = model.linear.bias.clone().detach()[0]
       
         if true_loss_list is not None:
             if (t+1) % record_frequency == 0:
