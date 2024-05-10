@@ -37,10 +37,13 @@ def weighted_logit(lam, X, y, model, device="cpu"):
     else:
         pred_major = torch.mm(X_major, theta.view(-1, 1))
         pred_minor = torch.mm(X_minor, theta.view(-1, 1))
-    # reweighted loss function
+    # reweighted loss function with bias correction due to mini-batching
+    # full data size = 1000
+    # positive = 956
+    # negative = 44
     criterion = torch.nn.BCEWithLogitsLoss(reduction="sum")
-    loss = (1 - lam) * (len(X)/len(X_major)) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
-    loss += lam * (len(X)/len(X_minor)) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+    loss = (1 - lam) * (1000/956) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
+    loss += lam * (1000/44) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
     loss = loss/len(X)
 
     return loss
@@ -93,10 +96,13 @@ def reg_weighted_logit(lam, X, y, model, device="cpu"):
     else:
         pred_major = torch.mm(X_major, theta.view(-1, 1))
         pred_minor = torch.mm(X_minor, theta.view(-1, 1))
-    # reweighted loss function with bias correction due to mini-batching
+    # reweighted loss function with bias correction due to mini-
+    # full data size = 1000
+    # positive = 956
+    # negative = 44
     criterion = torch.nn.BCEWithLogitsLoss(reduction="sum")
-    loss = (1 - lam) * (len(X)/len(X_major)) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
-    loss += lam * (len(X)/len(X_minor)) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+    loss = (1 - lam) * (1000/956) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
+    loss += lam * (1000/44) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
     loss = loss/len(X) + 0.25 * 0.5 * theta.norm(p=2) ** 2
 
     return loss
