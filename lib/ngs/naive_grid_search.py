@@ -7,11 +7,11 @@ from lib.ngs.reg_solver import train, test
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, trainDataLoader,
-                 step_size=None, const=None, SGD=False,
-                 testDataLoader=None, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, 
+                 step_size=None, const=None, SGD=False, testDataLoader=None, oracle=False,
+                 true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, 
                  record_frequency=5, device="cpu"):
     # performs early-stop if the true solution path is known                
-    if true_loss_list is not None:
+    if oracle and true_loss_list is not None:
         # true loss
         i = round((lam_max - lam) / fine_delta_lam)
         if i >= len(true_loss_list):
@@ -77,7 +77,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
 # returns a list of trained models
 def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
                       data_input_dim, lr=1e-3, step_size=None, const=None, SGD=False, 
-                      testDataLoader=None, true_loss_list=None, stopping_criterion=None, 
+                      testDataLoader=None, oracle=False, true_loss_list=None, stopping_criterion=None, 
                       record_frequency=5, device="cpu"):
     fine_delta_lam = None
     if true_loss_list is not None:
@@ -107,6 +107,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
                            step_size=step_size,
                            const=const, SGD=SGD,
                            testDataLoader=testDataLoader,
+                           oracle=oracle,
                            true_loss_list=true_loss_list,
                            fine_delta_lam=fine_delta_lam,
                            stopping_criterion=stopping_criterion,
