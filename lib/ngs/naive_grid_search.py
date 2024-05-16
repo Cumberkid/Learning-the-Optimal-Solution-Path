@@ -9,7 +9,7 @@ from lib.ngs.reg_solver import train, test
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, trainDataLoader,
                  step_size=None, const=None, SGD=False, testDataLoader=None, oracle=False,
                  true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, 
-                 record_frequency=5, device="cpu"):
+                 check_frequency=5, device="cpu"):
     # performs early-stop if the true solution path is known                
     if true_loss_list is not None:
         # true loss
@@ -49,7 +49,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
             avg_intercept = model.linear.bias.clone().detach()[0]
       
         if true_loss_list is not None:
-            if (t+1) % record_frequency == 0:
+            if (t+1) % check_frequency == 0:
                 # do an accuracy check
                 if SGD:
                     with torch.no_grad():
@@ -61,11 +61,10 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
                     
                 error = approx_loss - true_loss
                 # stopping criterion
-                if oracle:
-                    if error <= stopping_criterion:
-                        itr += (t+1)
-                        early_stop = True
-                        break  # Early stop
+                if oracle and error <= stopping_criterion:
+                    itr += (t+1)
+                    early_stop = True
+                    break  # Early stop
             
     if not early_stop:
         itr += epochs
@@ -80,7 +79,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
 def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
                       data_input_dim, lr=1e-3, step_size=None, const=None, SGD=False, 
                       testDataLoader=None, oracle=False, true_loss_list=None, stopping_criterion=None, 
-                      record_frequency=5, device="cpu"):
+                      check_frequency=5, device="cpu"):
     fine_delta_lam = None
     if true_loss_list is not None:
         fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list) - 1)
@@ -114,7 +113,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
                            true_loss_list=true_loss_list,
                            fine_delta_lam=fine_delta_lam,
                            stopping_criterion=stopping_criterion,
-                           record_frequency=record_frequency,
+                           check_frequency=check_frequency,
                            device=device)
         if SGD:
             avg_weights.append(avg_model.linear.weight.clone().data.cpu().numpy()[0])
