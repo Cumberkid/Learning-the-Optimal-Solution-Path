@@ -11,7 +11,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
                  true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, 
                  record_frequency=5, device="cpu"):
     # performs early-stop if the true solution path is known                
-    if oracle and true_loss_list is not None:
+    if true_loss_list is not None:
         # true loss
         i = round((lam_max - lam) / fine_delta_lam)
         if i >= len(true_loss_list):
@@ -29,6 +29,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
 
     early_stop = False
     itr = 0
+    error = 0
                    
     for t in range(epochs):
         # if SGD and (t+2 > t_0):
@@ -60,7 +61,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
                     
                 error = approx_loss - true_loss
                 # stopping criterion
-                if error <= stopping_criterion:
+                if oracle and error <= stopping_criterion:
                     itr += (t+1)
                     early_stop = True
                     break  # Early stop
@@ -68,7 +69,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
     if not early_stop:
         itr += epochs
         
-    return itr
+    return itr, error
 
 """Naive Grid Search starts from $\lambda = 1$ and decreases $\lambda$ by $\Delta\lambda = \frac{\lambda_\text{max} - \lambda_\text{min}}{\text{# of grid}}$. The model trained on each grid point $(\lambda - \Delta\lambda)$ initializes weight with the linear weight of the model trained on the previous grid point $\lambda$."""
 
@@ -89,6 +90,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     avg_weights = []
     avg_intercepts = []
     total_itr = 0
+    grid_pass_error = 0
     # create a list of lambda's
     lambdas = np.linspace(lam_max, lam_min, num_grid)
     
@@ -102,7 +104,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     
     for lam in lambdas:
         # print(f"Running model on lambda = {lam}")
-        itr = GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer,
+        itr, grid_error = GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer,
                            trainDataLoader=trainDataLoader,
                            step_size=step_size,
                            const=const, SGD=SGD,
@@ -123,8 +125,9 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
         reg_params.append(model.reg_param)
         total_itr += itr
         # print(total_itr)
+        grid_pass_error = max([grid_pass_error, grid_error])
 
     if SGD:
-        return total_itr, reg_params, avg_intercepts, avg_weights
+        return total_itr, reg_params, avg_intercepts, avg_weights, grid_pass_error
     else:
-        return total_itr, reg_params, intercepts, weights
+        return total_itr, reg_params, intercepts, weights, grid_pass_error
