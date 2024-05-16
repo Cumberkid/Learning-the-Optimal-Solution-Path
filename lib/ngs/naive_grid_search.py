@@ -61,10 +61,11 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
                     
                 error = approx_loss - true_loss
                 # stopping criterion
-                if oracle and error <= stopping_criterion:
-                    itr += (t+1)
-                    early_stop = True
-                    break  # Early stop
+                if oracle:
+                    if error <= stopping_criterion:
+                        itr += (t+1)
+                        early_stop = True
+                        break  # Early stop
             
     if not early_stop:
         itr += epochs
