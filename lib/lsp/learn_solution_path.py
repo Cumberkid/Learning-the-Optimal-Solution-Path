@@ -140,7 +140,7 @@ def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
         break_itr = num_itr_history[len(num_itr_history)-1]
         breaks.append(break_itr)
         if const is not None:
-            const = const/2
+            const = const/(2**0.5)
 
 
         # increase basis dimension by 1
