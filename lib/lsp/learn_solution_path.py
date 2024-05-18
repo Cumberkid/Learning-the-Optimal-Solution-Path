@@ -14,11 +14,8 @@ def distance(init_weight, prev_weight, curr_weight, n, k, thresh=0.6, q=1.5, k_0
             diag = (s < thresh)
         else:
             diag = False
-        # print(s)
-        # print(f"distance diagnostic: {diag}")
         while n == int(q**k):
             k += 1
-        # print(k)
         prev_weight = curr_weight
     else:
         diag = False
