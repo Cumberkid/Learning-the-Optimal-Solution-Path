@@ -16,8 +16,8 @@ def reg_logit(lam, X, y, model, distribution='uniform', device='cpu'):
         loss = (1 - lam) * criterion(pred.view(-1, 1), y.view(-1, 1))
         loss += lam * 0.5 * theta.norm(p=2) ** 2
     elif distribution=='exponential':
-        loss = criterion(pred.view(-1, 1), y.view(-1, 1))
-        loss += lam * 0.5 * theta.norm(p=2) ** 2
+        loss = 1/(1+lam) * criterion(pred.view(-1, 1), y.view(-1, 1))
+        loss += lam/(1+lam) * 0.5 * theta.norm(p=2) ** 2
 
     return loss
 
@@ -51,8 +51,8 @@ def weighted_logit(lam, X, y, model, distribution='uniform', device='cpu'):
         loss = (1 - lam) * (1000/956) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
         loss += lam * (1000/44) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
     elif distribution=='exponential':
-        loss = (1000/956) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
-        loss += lam * (1000/44) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+        loss = 1/(1+lam) * (1000/956) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
+        loss += lam/(1+lam) * (1000/44) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
         
     loss = loss/len(X)
 
@@ -88,8 +88,8 @@ def reg_weighted_logit(lam, X, y, model, distribution='uniform', device="cpu"):
         loss = (1 - lam) * (1000/956) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
         loss += lam * (1000/44) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
     elif distribution=='exponential':
-        loss = (1000/956) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
-        loss += lam * (1000/44) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
+        loss = 1/(1+lam) *(1000/956) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
+        loss += lam/(1+lam) * (1000/44) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
         
     loss = loss/len(X) + 0.25 * 0.5 * theta.norm(p=2) ** 2
 
