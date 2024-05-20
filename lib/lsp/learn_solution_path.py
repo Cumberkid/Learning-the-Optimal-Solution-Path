@@ -54,7 +54,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
         k = 0
 
     if thresh_basis is None:
-        thresh_basis = lambda x: 1e-5
+        thresh_basis = lambda x: 1e-4
 
     itr = itr
     avg_weight = model.linear.weight.clone().detach()
