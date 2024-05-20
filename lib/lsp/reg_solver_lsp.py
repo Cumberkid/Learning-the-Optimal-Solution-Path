@@ -23,9 +23,8 @@ def train_lsp(itr, init_weight, dataloader, model, loss_fn, optimizer, weighted_
 
         if step_size is not None:
             # shrink learning rate as customized
-            lr = step_size(t, const)
             for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
+                param_group['lr'] = step_size(itr, const)
 
         # Backpropagation
         optimizer.zero_grad()
