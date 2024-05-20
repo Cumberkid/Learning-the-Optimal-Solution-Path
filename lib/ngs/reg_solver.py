@@ -7,9 +7,10 @@ To speed up, we use a batch of data points to replace a single data point at eac
 """
 
 # trace_frequency is measured in number of batches. -1 means don't print
-def train(dataloader, model, loss_fn, optimizer, device='cpu', trace_frequency = -1):
+def train(itr, avg_weight, dataloader, model, loss_fn, optimizer, step_size=None, const=None, device='cpu'):
     # size = len(dataloader.dataset)
     model.train()
+    avg_weight = avg_weight #initialize for weighted average
     # here, the "batch" notion takes care of randomization
     for batch, (X_train, y_train) in enumerate(dataloader):
         X_train, y_train = X_train.to(device), y_train.to(device)
@@ -17,25 +18,34 @@ def train(dataloader, model, loss_fn, optimizer, device='cpu', trace_frequency =
 
         loss = loss_fn(model.reg_param, X_train, y_train, model)
         
+        if step_size is not None:
+            # shrink learning rate as customized
+            lr = step_size(itr, const)
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
         # Backpropagation
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
-        # if (trace_frequency > 0) & (batch % trace_frequency == 0):
-        #     loss, current = loss.item(), (batch + 1) * len(X_train)
-        #     print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
-"""The "test" function defined here is our objective function $h(\theta, \lambda) = (1-\lambda)BCE(X\theta, y) + \frac{\lambda}{2}\|\theta\|^2$. The linear weight from the above trained model is our $\theta$."""
+        # update weighted average iterate
+        rho = 2 / (itr+3)
+        itr += 1
+        if itr>50:
+            avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()
+        else:
+            avg_weight = model.linear.weight.clone().detach()
+            
+    return itr, avg_weight
 
-# Test function
+# test function computes objective loss for a specific input hyperparameter lam
 def test(dataloader, model, loss_fn, lam, device='cpu'):
     model.eval() # important
     with torch.no_grad():  # makes sure we don't corrupt gradients and is faster
         for batch, (X_test, y_test) in enumerate(dataloader):
             X_test, y_test = X_test.to(device), y_test.to(device)
             
-            # Compute prediction error
+            # Compute objective loss
             oos = loss_fn(lam, X_test, y_test, model)
             
     return oos.item()
