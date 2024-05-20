@@ -1,10 +1,4 @@
 import torch
-"""The "train" function executes optimization on the input dataset w.r.t. the input loss function with the input optimizer on the ridge-regularized regression objective $h(\theta, \lambda) = (1-\lambda)BCE(X\theta, y) + \frac{\lambda}{2}\|\theta\|^2$. We will use the pytorch built-in SGD optimizer later, but note that this optimizer is actually just a deterministic gradient descent program.
-
-To randomize for SGD, we notice that the loss function is a sum of losses of all training data points, and a standard SGD would randomly choose one of those points to descend on at each step of descent.
-
-To speed up, we use a batch of data points to replace a single data point at each step of descent. When batch size = 1, this is equivalent to a standard SGD; and when batch size = training set size, this is simply a deterministic gradient descent.
-"""
 
 # trace_frequency is measured in number of batches. -1 means don't print
 def train(itr, init_weight, init_intercept, dataloader, model, loss_fn, optimizer, weighted_avg=False, step_size=None, const=None, device='cpu'):
