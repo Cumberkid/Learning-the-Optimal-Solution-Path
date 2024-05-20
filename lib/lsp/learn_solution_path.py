@@ -45,7 +45,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
         sup_err_history_avg = []
 
     sup_err_history = []
-    num_itr_history = []
+    num_pass_history = []
 
     if diminish:
         # initilize for distance diagnostic
@@ -75,7 +75,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
 
         # record iteration result
         if (record_frequency > 0) & *((t+1) % record_frequency == 0):
-            num_itr_history.append(t+1)
+            num_pass_history.append(t+1)
             if weighted_avg:
                 with torch.no_grad():
                     avg_model.linear.weight.copy_(avg_weight)
@@ -98,9 +98,9 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
             norm_grad_list.append(new_grad_norm)
 
     if weighted_avg:
-        return num_itr_history, sup_err_history, avg_weight, lr, itr
+        return num_pass_history, sup_err_history, avg_weight, lr, itr
     else:
-        return num_itr_history, sup_err_history, model.linear.weight.clone().detach(), lr, itr
+        return num_pass_history, sup_err_history, model.linear.weight.clone().detach(), lr, itr
 
 
 def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
@@ -111,7 +111,7 @@ def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
     if step_size is not None:
         diminish = False
 
-    num_itr_history = []
+    num_pass_history = []
     sup_err_history = []
     breaks = []
     weight = init_weight
@@ -124,16 +124,16 @@ def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
 
         print(f"********** now running lsp with #basis dimension = {basis_dim} ***********")
 
-        num_itr_current, sup_err_current, weight, lr, itr = learn_solution_path(input_dim, basis_dim, phi_lam, 
+        num_pass_current, sup_err_current, weight, lr, itr = learn_solution_path(input_dim, basis_dim, phi_lam, 
                             max_epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, true_losses, 
                             init_lr=lr, diminish=diminish, gamma=gamma, q=q, k_0=k_0, thresh_lr=thresh_lr,
                             step_size=step_size, const=const, init_weight=weight, intercept=intercept, 
                             weighted_avg=weighted_avg, itr=itr, thresh_basis=thresh_basis, record_frequency=record_frequency, 
                             distribution=distribution, device=device, trace_frequency=trace_frequency)
 
-        num_itr_history += [(x + break_itr) for x in num_itr_current]
+        num_pass_history += [(x + break_itr) for x in num_pass_current]
         sup_err_history += sup_err_current
-        break_itr = num_itr_history[len(num_itr_history)-1]
+        break_itr = num_pass_history[len(num_pass_history)-1]
         breaks.append(break_itr)
         if const is not None:
             const = const/(2**0.5)
@@ -141,4 +141,4 @@ def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
         # increase basis dimension by 1
         weight = torch.cat((weight, torch.zeros(weight.size(dim=0), 1)), 1)
 
-    return num_itr_history, sup_err_history, breaks
+    return num_pass_history, sup_err_history, breaks
