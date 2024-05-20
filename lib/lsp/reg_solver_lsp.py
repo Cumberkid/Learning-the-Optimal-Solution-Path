@@ -2,6 +2,8 @@ import torch
 
 # itr: input is number of iterations run before current epoch, returns number of iterations run after current epoch
 # avg_weight: keeps track of and updates weighted average iterates including before current epoch according to Lacoste-Julien et al.
+# step_size function take in 2 parameters: current iteration number, and a self-defined constant const
+# step_size function returns the learning rate for current iteration
 def train_lsp(itr, avg_weight, dataloader, model, loss_fn, optimizer, step_size=None, const=None, distribution='uniform', device='cpu'):
     model.train()
     avg_weight = avg_weight
