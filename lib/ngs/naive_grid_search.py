@@ -35,7 +35,8 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
     for t in range(epochs):
 
         itr, avg_weight, avg_intercept = train(itr, avg_weight, avg_intercept, 
-                                               trainDataLoader, model, loss_fn, optimizer, device)
+                                               trainDataLoader, model, loss_fn, optimizer, 
+                                               step_size, const, device)
       
         if (true_loss_list is not None) and (oracle):
             if (t+1) % check_frequency == 0:
