@@ -11,6 +11,8 @@ def train_lsp(dataloader, model, loss_fn, optimizer, distribution='uniform', dev
         # SGD picks random regulation parameter lambda
         if distribution == 'uniform':
             rndm_lam = torch.torch.distributions.Uniform(0, 1).sample().cpu()
+        elif distribution == 'exponential':
+            rndm_lam = torch.torch.distributions.Exponential(1).sample().cpu()
         # print(f"random lam = {rndm_lam}")
 
         loss = loss_fn(rndm_lam, X_train, y_train, model, device)
