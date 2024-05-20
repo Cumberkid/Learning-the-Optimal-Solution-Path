@@ -2,7 +2,7 @@ import torch
 
 # itr: input is number of iterations run before current epoch, returns number of iterations run after current epoch
 # avg_weight: keeps track of and updates weighted average iterates including before current epoch according to Lacoste-Julien et al.
-def train_lsp(itr, t, avg_weight, dataloader, model, loss_fn, optimizer, step_size=None, const=None, distribution='uniform', device='cpu'):
+def train_lsp(itr, avg_weight, dataloader, model, loss_fn, optimizer, step_size=None, const=None, distribution='uniform', device='cpu'):
     model.train()
     avg_weight = avg_weight
     for batch, (X_train, y_train) in enumerate(dataloader):
