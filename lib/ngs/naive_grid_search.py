@@ -7,8 +7,8 @@ from lib.ngs.reg_solver import train, test
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, trainDataLoader,
-                 step_size=None, const=None, weighted_avg=False, testDataLoader=None, oracle=False,
-                 true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, 
+                 step_size=None, const=None, weighted_avg=False, testDataLoader=None, 
+                 oracle=False, true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, 
                  check_frequency=5, device="cpu"):
     # performs early-stop if the true solution path is known                
     if true_loss_list is not None:
@@ -24,32 +24,20 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
                    
     if weighted_avg:
         avg_model.reg_param = lam
-        avg_weight = model.linear.weight.clone().detach()[0] # weighted averaging sum initialized
-        avg_intercept = model.linear.bias.clone().detach()[0]
+        avg_weight = model.linear.weight.clone().detach().squeeze() # weighted averaging sum initialized
+        avg_intercept = model.linear.bias.clone().detach().squeeze()
 
     early_stop = False
-    itr = itr
+    itr = 0
     passes = 0
     error = 0
                    
     for t in range(epochs):
-        # # if SGD and (t+2 > t_0):
-        # if SGD:
-        #     # shrink learning rate:
-        #     for param_group in optimizer.param_groups:
-        #         param_group['lr'] = step_size(t, const)
 
-        avg_weight, avg_intercept, itr = train(itr, avg_weight, avg_intercept, trainDataLoader, model, loss_fn, optimizer, device)
+        itr, avg_weight, avg_intercept = train(itr, avg_weight, avg_intercept, 
+                                               trainDataLoader, model, loss_fn, optimizer, device)
       
-        # if SGD and t>5: 
-        #     rho = 2 / (t+3) #compute weighted averaging sum
-        #     avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()[0]
-        #     avg_intercept = (1-rho) * avg_intercept + rho * model.linear.bias.clone().detach()[0]
-        # else:
-        #     avg_weight = model.linear.weight.clone().detach()[0]
-        #     avg_intercept = model.linear.bias.clone().detach()[0]
-      
-        if true_loss_list is not None:
+        if (true_loss_list is not None) and (oracle):
             if (t+1) % check_frequency == 0:
                 # do an accuracy check
                 if weighted_avg:
@@ -61,8 +49,8 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
                     approx_loss = test(testDataLoader, model, loss_fn, lam, device)
                     
                 error = approx_loss - true_loss
-                # stopping criterion
-                if oracle and error <= stopping_criterion:
+                # check if we are within stopping criterion
+                if error <= stopping_criterion:
                     passes += (t+1)
                     early_stop = True
                     break  # Early stop
@@ -70,7 +58,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
     if not early_stop:
         passes += epochs
         
-    return passes, error, itr
+    return passes, error, avg_weight, avg_intercept
 
 """Naive Grid Search starts from $\lambda = 1$ and decreases $\lambda$ by $\Delta\lambda = \frac{\lambda_\text{max} - \lambda_\text{min}}{\text{# of grid}}$. The model trained on each grid point $(\lambda - \Delta\lambda)$ initializes weight with the linear weight of the model trained on the previous grid point $\lambda$."""
 
@@ -78,7 +66,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
 # from lam_min to lam_max
 # returns a list of trained models
 def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoader,
-                      data_input_dim, lr=1e-3, step_size=None, const=None, SGD=False, 
+                      data_input_dim, lr=1e-3, step_size=None, const=None, weighted_avg=False, 
                       testDataLoader=None, oracle=False, true_loss_list=None, stopping_criterion=None, 
                       check_frequency=5, device="cpu"):
     fine_delta_lam = None
@@ -90,7 +78,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     intercepts = []
     avg_weights = []
     avg_intercepts = []
-    total_itr = 0
+    total_passes = 0
     grid_pass_error = 0
     # create a list of lambda's
     lambdas = np.linspace(lam_max, lam_min, num_grid)
@@ -105,30 +93,30 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     
     for lam in lambdas:
         # print(f"Running model on lambda = {lam}")
-        itr, grid_error = GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer,
-                           trainDataLoader=trainDataLoader,
-                           step_size=step_size,
-                           const=const, SGD=SGD,
-                           testDataLoader=testDataLoader,
-                           oracle=oracle,
-                           true_loss_list=true_loss_list,
-                           fine_delta_lam=fine_delta_lam,
-                           stopping_criterion=stopping_criterion,
-                           check_frequency=check_frequency,
-                           device=device)
-        if SGD:
-            avg_weights.append(avg_model.linear.weight.clone().data.cpu().numpy()[0])
-            avg_intercepts.append(avg_model.linear.bias.clone().data.cpu().numpy()[0])
+        passes, grid_error, avg_weight, avg_intercept = GD_on_a_grid(lam, lam_max, epochs, loss_fn, 
+                                                         model, avg_model, optimizer,
+                                                         trainDataLoader=trainDataLoader,
+                                                         step_size=step_size, const=const, 
+                                                         weighted_avg=weighted_avg,
+                                                         testDataLoader=testDataLoader,
+                                                         oracle=oracle,
+                                                         true_loss_list=true_loss_list,
+                                                         fine_delta_lam=fine_delta_lam,
+                                                         stopping_criterion=stopping_criterion,
+                                                         check_frequency=check_frequency,
+                                                         device=device)
+        if weighted_avg:
+            avg_weights.append(avg_weight)
+            avg_intercepts.append(avg_intercept)
         else:
-            weights.append(model.linear.weight.clone().data.cpu().numpy()[0])
-            intercepts.append(model.linear.bias.clone().data.cpu().numpy()[0])                  
-        # print(model.linear.weight)
+            weights.append(model.linear.weight.clone().data.cpu().squeeze().numpy())
+            intercepts.append(model.linear.bias.clone().data.cpu().squeeze().numpy())                  
+
         reg_params.append(model.reg_param)
-        total_itr += itr
-        # print(total_itr)
+        total_passes += passes
         grid_pass_error = max([grid_pass_error, grid_error])
 
-    if SGD:
-        return total_itr, reg_params, avg_intercepts, avg_weights, grid_pass_error
+    if weighted_avg:
+        return total_passes, reg_params, avg_intercepts, avg_weights, grid_pass_error
     else:
-        return total_itr, reg_params, intercepts, weights, grid_pass_error
+        return total_passes, reg_params, intercepts, weights, grid_pass_error
