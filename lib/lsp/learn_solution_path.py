@@ -23,11 +23,10 @@ def distance(init_weight, prev_weight, curr_weight, n, k, thresh=0.6, q=1.5, k_0
     return diag, k, prev_weight
 
 
-# step_size function take in 2 parameters: current iteration number, and a self-defined constant
-# step_size function returns the learning rate for current iteration
+
 def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max,
-                        true_losses, init_lr=1e-3, diminish=False, gamma=0.97, q=1.3, k_0=5, thresh_lr=0.6, 
-                        step_size=None, const=None, init_weight=None, intercept=True, weighted_avg=True, thresh_basis=1e-5,
+                        true_losses, init_lr=1e-3, diminish=False, gamma=0.97, q=1.3, k_0=5, thresh_lr=0.6,
+                        step_size=None, const=None, init_weight=None, intercept=True, weighted_avg=True, itr=0, thresh_basis=None,
                         record_frequency=10, distribution='uniform', device='cpu', trace_frequency=-1):
     # build the model
     model = Basis_TF_SGD(input_dim, basis_dim, phi_lam, init_weight=init_weight, intercept=intercept).to(device)
@@ -53,18 +52,17 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
         prev_weight = model.linear.weight.clone().detach() # memorize theta_n/q for every n=q^k until max_epochs/q
         k = 0
 
+    if thresh_basis is None:
+        thresh_basis = lambda x: 1e-5
+
+    itr = itr
+    avg_weight = model.linear.weight.clone().detach()
+
     for t in range(max_epochs):
-        if step_size is not None:
-            # shrink learning rate as customized
-            lr = step_size(t, const)
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
-            # print(f"beta {const}/iteration #{t+1}, new lr = {lr}")
-
         # run one pass of dataset
-        new_grad = train_lsp(trainDataLoader, model, loss_fn, optimizer, distribution, device)
+        new_grad, avg_weight, itr = train_lsp(itr, avg_weight, trainDataLoader, model, loss_fn, optimizer, step_size, const, distribution, device)
 
-        if diminish:
+        if diminish: # diminish according to distance diagnostic
             # run distance diagnostic
             curr_weight = model.linear.weight.clone().detach()
             distance_diag, k, prev_weight = distance(init_weight, prev_weight, curr_weight, t+1, k, thresh_lr, q, k_0)
@@ -73,13 +71,6 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
                 # print(f"diminish at iteration #{t+1}, new lr = {lr}")
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = lr
-
-        # update weighted average of iterates
-        if weighted_avg and t>50:
-            rho = 2 / (t+3)
-            avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()
-        else:
-            avg_weight = model.linear.weight.clone().detach()
 
         # record iteration result
         if (t+1) % record_frequency == 0:
@@ -100,15 +91,15 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
         # when the change in second moment of gradient is small enough,
         # stop to add more basis functions
         new_grad_norm = new_grad.norm(p=2)**2
-        if len(norm_grad_list) >= 10 and abs(norm_grad_list[0] - new_grad_norm) < thresh_basis:
+        if len(norm_grad_list) >= 10 and abs(norm_grad_list[0] - new_grad_norm) < thresh_basis(basis_dim):
             break
         else:
             norm_grad_list.append(new_grad_norm)
 
     if weighted_avg:
-        return num_itr_history, sup_err_history, avg_weight, lr
+        return num_itr_history, sup_err_history, avg_weight, lr, itr
     else:
-        return num_itr_history, sup_err_history, model.linear.weight.clone().detach(), lr
+        return num_itr_history, sup_err_history, model.linear.weight.clone().detach(), lr, itr
 
 
 def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs, 
