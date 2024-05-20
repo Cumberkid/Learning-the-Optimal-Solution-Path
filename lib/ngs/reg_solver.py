@@ -7,7 +7,7 @@ To speed up, we use a batch of data points to replace a single data point at eac
 """
 
 # trace_frequency is measured in number of batches. -1 means don't print
-def train(itr, avg_weight, dataloader, model, loss_fn, optimizer, step_size=None, const=None, device='cpu'):
+def train(itr, avg_weight, avg_intercept, dataloader, model, loss_fn, optimizer, step_size=None, const=None, device='cpu'):
     # size = len(dataloader.dataset)
     model.train()
     avg_weight = avg_weight #initialize for weighted average
@@ -32,11 +32,13 @@ def train(itr, avg_weight, dataloader, model, loss_fn, optimizer, step_size=None
         rho = 2 / (itr+3)
         itr += 1
         if itr>50:
-            avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()
+            avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach().squeeze()
+            avg_intercept = (1-rho) * avg_intercept + rho * model.linear.bias.clone().detach().squeeze()
         else:
-            avg_weight = model.linear.weight.clone().detach()
+            avg_weight = model.linear.weight.clone().detach().squeeze()
+            avg_intercept = model.linear.bias.clone().detach().squeeze()
             
-    return itr, avg_weight
+    return itr, avg_weight, avg_intercept
 
 # test function computes objective loss for a specific input hyperparameter lam
 def test(dataloader, model, loss_fn, lam, device='cpu'):
