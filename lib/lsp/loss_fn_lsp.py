@@ -12,6 +12,7 @@ def reg_logit(lam, X, y, model, distribution='uniform', device='cpu'):
         pred = torch.mm(X, theta.view(-1, 1))
     # print(theta[0])
     criterion = torch.nn.BCEWithLogitsLoss(reduction="mean")
+    loss = -1
     if distribution=='uniform':
         loss = (1 - lam) * criterion(pred.view(-1, 1), y.view(-1, 1))
         loss += lam * 0.5 * theta.norm(p=2) ** 2
@@ -47,6 +48,7 @@ def weighted_logit(lam, X, y, model, distribution='uniform', device='cpu'):
     # positive = 956
     # negative = 44
     criterion = torch.nn.BCEWithLogitsLoss(reduction="sum")
+    loss = -1
     if distribution=='uniform':
         loss = (1 - lam) * (1000/956) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
         loss += lam * (1000/44) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
@@ -84,6 +86,7 @@ def reg_weighted_logit(lam, X, y, model, distribution='uniform', device="cpu"):
     # positive = 956
     # negative = 44
     criterion = torch.nn.BCEWithLogitsLoss(reduction="sum")
+    loss = -1
     if distribution=='uniform':
         loss = (1 - lam) * (1000/956) * criterion(pred_major.view(-1, 1), y_major.view(-1, 1))
         loss += lam * (1000/44) * criterion(pred_minor.view(-1, 1), y_minor.view(-1, 1))
