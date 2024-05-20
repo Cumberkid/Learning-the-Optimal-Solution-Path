@@ -31,12 +31,12 @@ def train_lsp(dataloader, model, loss_fn, optimizer, distribution='uniform', dev
     return grad
     
 # Test function
-def test_lsp(dataloader, model, loss_fn, lam, device='cpu'):
+def test_lsp(dataloader, model, loss_fn, lam, distribution, device='cpu'):
     model.eval() #important
     with torch.no_grad():  #makes sure we don't corrupt gradients and is faster
         for batch, (X_test, y_test) in enumerate(dataloader):
           X_test, y_test = X_test.to(device), y_test.to(device)
           
-          oos = loss_fn(lam, X_test, y_test, model, device)
+          oos = loss_fn(lam, X_test, y_test, model, distribution, device)
           
     return oos.item()
