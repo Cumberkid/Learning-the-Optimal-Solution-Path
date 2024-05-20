@@ -7,7 +7,7 @@ from lib.ngs.reg_solver import train, test
 
 # running gradient descent with fixed learning rate on a single grid point, i.e. for one specified lambda
 def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, trainDataLoader,
-                 step_size=None, const=None, SGD=False, testDataLoader=None, oracle=False,
+                 step_size=None, const=None, weighted_avg=False, testDataLoader=None, oracle=False,
                  true_loss_list=None, fine_delta_lam=None, stopping_criterion=None, 
                  check_frequency=5, device="cpu"):
     # performs early-stop if the true solution path is known                
@@ -22,36 +22,37 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
 
     model.reg_param = lam
                    
-    if SGD:
+    if weighted_avg:
         avg_model.reg_param = lam
         avg_weight = model.linear.weight.clone().detach()[0] # weighted averaging sum initialized
         avg_intercept = model.linear.bias.clone().detach()[0]
 
     early_stop = False
-    itr = 0
+    itr = itr
+    passes = 0
     error = 0
                    
     for t in range(epochs):
-        # if SGD and (t+2 > t_0):
-        if SGD:
-            # shrink learning rate:
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = step_size(t, const)
+        # # if SGD and (t+2 > t_0):
+        # if SGD:
+        #     # shrink learning rate:
+        #     for param_group in optimizer.param_groups:
+        #         param_group['lr'] = step_size(t, const)
 
-        train(trainDataLoader, model, loss_fn, optimizer, device)
+        avg_weight, avg_intercept, itr = train(itr, avg_weight, avg_intercept, trainDataLoader, model, loss_fn, optimizer, device)
       
-        if SGD and t>5: 
-            rho = 2 / (t+3) #compute weighted averaging sum
-            avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()[0]
-            avg_intercept = (1-rho) * avg_intercept + rho * model.linear.bias.clone().detach()[0]
-        else:
-            avg_weight = model.linear.weight.clone().detach()[0]
-            avg_intercept = model.linear.bias.clone().detach()[0]
+        # if SGD and t>5: 
+        #     rho = 2 / (t+3) #compute weighted averaging sum
+        #     avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()[0]
+        #     avg_intercept = (1-rho) * avg_intercept + rho * model.linear.bias.clone().detach()[0]
+        # else:
+        #     avg_weight = model.linear.weight.clone().detach()[0]
+        #     avg_intercept = model.linear.bias.clone().detach()[0]
       
         if true_loss_list is not None:
             if (t+1) % check_frequency == 0:
                 # do an accuracy check
-                if SGD:
+                if weighted_avg:
                     with torch.no_grad():
                         avg_model.linear.weight.copy_(avg_weight)
                         avg_model.linear.bias.copy_(avg_intercept)
@@ -62,14 +63,14 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, avg_model, optimizer, tra
                 error = approx_loss - true_loss
                 # stopping criterion
                 if oracle and error <= stopping_criterion:
-                    itr += (t+1)
+                    passes += (t+1)
                     early_stop = True
                     break  # Early stop
             
     if not early_stop:
-        itr += epochs
+        passes += epochs
         
-    return itr, error
+    return passes, error, itr
 
 """Naive Grid Search starts from $\lambda = 1$ and decreases $\lambda$ by $\Delta\lambda = \frac{\lambda_\text{max} - \lambda_\text{min}}{\text{# of grid}}$. The model trained on each grid point $(\lambda - \Delta\lambda)$ initializes weight with the linear weight of the model trained on the previous grid point $\lambda$."""
 
