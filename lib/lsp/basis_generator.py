@@ -9,13 +9,25 @@ def monomials(lam, basis_dim, device='cpu'):
     vec = torch.tensor([lam**i for i in range(basis_dim)], dtype=torch.float32)
     return bec.to(device)
     
-# scaled and shifted legendre polynomials
+# scaled and shifted Legendre polynomials
 def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
     # Transform the lam to [-1, 1] interval
     lam_transformed = 2 * lam - 1
     vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed) for i in range(basis_dim)], dtype=torch.float32)
     return vec.to(device)
 
+# simple Laguerre basis (alpha=0)
+def laguerre(lam, basis_dim, device='cpu'):
+    if basis_dim<2:
+        vec = [1]
+    else:
+        vec = [1, 1-lam]
+        for i in range(basis_dim-2):
+            k = i+1
+            vec.append(((2*k+1-lam)*vec[k] - k*vec[k-1])/(k+1))
+    vec = torch.tensor(vec, dtype=torch.float32)
+    return vec.to(device)
+    
 # cubic bspline basis
 class SplineBasis:
     def __init__(self, knots, order):
