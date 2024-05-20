@@ -22,8 +22,9 @@ def distance(init_weight, prev_weight, curr_weight, n, k, thresh=0.6, q=1.5, k_0
 
     return diag, k, prev_weight
 
-
-
+# Default for diminishing stepsize is to use the 'distance diagnostic' described in this paper:
+# Returns the list of epochs with corresponding solution path errors, final weight of the trained model for the modified stochastic
+# optimization problem, final learning rate if use distance diagnostic, and total number of iterations
 def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max,
                         true_losses, init_lr=1e-3, diminish=False, gamma=0.97, q=1.3, k_0=5, thresh_lr=0.6,
                         step_size=None, const=None, init_weight=None, intercept=True, weighted_avg=True, itr=0, thresh_basis=None,
@@ -73,7 +74,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
                     param_group['lr'] = lr
 
         # record iteration result
-        if (t+1) % record_frequency == 0:
+        if (record_frequency > 0) & *((t+1) % record_frequency == 0):
             num_itr_history.append(t+1)
             if weighted_avg:
                 with torch.no_grad():
@@ -86,7 +87,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
             sup_err_history.append(sup_err)
             if (trace_frequency > 0) & ((t+1) % trace_frequency == 0):
                 print(f"--------approximate solution path for # itr = {t+1} complete--------")
-                print(f"# itr: {t+1}\t sup error: {sup_err}")
+                print(f"# epoch: {t+1}\t sup error: {sup_err}")
 
         # when the change in second moment of gradient is small enough,
         # stop to add more basis functions
@@ -102,11 +103,11 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
         return num_itr_history, sup_err_history, model.linear.weight.clone().detach(), lr, itr
 
 
-def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs, 
-                 trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, true_losses, 
-                 init_lr=1e-3, diminish=True, gamma=0.97, q=1.3, k_0=5, thresh_lr=0.6, 
-                 step_size=None, const=None, init_weight=None, intercept=True, weighted_avg=False, 
-                 thresh_basis=1e-5, record_frequency=10, distribution='uniform', device='cpu', trace_frequency=-1):
+def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
+                 trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, true_losses,
+                 init_lr=1e-3, diminish=True, gamma=0.97, q=1.3, k_0=5, thresh_lr=0.6,
+                 step_size=None, const=None, init_weight=None, intercept=True, weighted_avg=True,
+                 thresh_basis=None, record_frequency=10, distribution='uniform', device='cpu', trace_frequency=-1):
     if step_size is not None:
         diminish = False
 
@@ -117,14 +118,18 @@ def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
     lr = init_lr
     break_itr = 0
     const = const
+    itr = 0
 
     for basis_dim in range(start_basis_dim, end_basis_dim):
 
         print(f"********** now running lsp with #basis dimension = {basis_dim} ***********")
 
-        num_itr_current, sup_err_current, weight, lr = learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max,
-                            true_losses, init_lr=lr, diminish=diminish, gamma=gamma, q=q, k_0=k_0, thresh_lr=thresh_lr,step_size=step_size, const=const, init_weight=weight,
-                            intercept=intercept, weighted_avg=weighted_avg, thresh_basis=thresh_basis, record_frequency=record_frequency, distribution=distribution, device=device, trace_frequency=trace_frequency)
+        num_itr_current, sup_err_current, weight, lr, itr = learn_solution_path(input_dim, basis_dim, phi_lam, 
+                            max_epochs, trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, true_losses, 
+                            init_lr=lr, diminish=diminish, gamma=gamma, q=q, k_0=k_0, thresh_lr=thresh_lr,
+                            step_size=step_size, const=const, init_weight=weight, intercept=intercept, 
+                            weighted_avg=weighted_avg, itr=itr, thresh_basis=thresh_basis, record_frequency=record_frequency, 
+                            distribution=distribution, device=device, trace_frequency=trace_frequency)
 
         num_itr_history += [(x + break_itr) for x in num_itr_current]
         sup_err_history += sup_err_current
@@ -132,7 +137,6 @@ def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
         breaks.append(break_itr)
         if const is not None:
             const = const/(2**0.5)
-
 
         # increase basis dimension by 1
         weight = torch.cat((weight, torch.zeros(weight.size(dim=0), 1)), 1)
