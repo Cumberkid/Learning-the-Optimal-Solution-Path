@@ -41,7 +41,6 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
     # initialize weighted averaging sum
     if weighted_avg:
         avg_model = Basis_TF_SGD(input_dim, basis_dim, phi_lam, init_weight=init_weight, intercept=intercept).to(device)
-        avg_weight = avg_model.linear.weight.clone().detach()
         sup_err_history_avg = []
 
     sup_err_history = []
@@ -57,11 +56,12 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
         thresh_basis = lambda x: 1e-4
 
     itr = itr
-    avg_weight = model.linear.weight.clone().detach()
+    weight = model.linear.weight.clone().detach()
 
     for t in range(max_epochs):
         # run one pass of dataset
-        new_grad, avg_weight, itr = train_lsp(itr, avg_weight, trainDataLoader, model, loss_fn, optimizer, step_size, const, distribution, device)
+        new_grad, weight, itr = train_lsp(itr, weight, trainDataLoader, model, loss_fn, optimizer, 
+                                          weighted_avg, step_size, const, distribution, device)
 
         if diminish: # diminish according to distance diagnostic
             # run distance diagnostic
@@ -78,7 +78,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
             num_pass_history.append(t+1)
             if weighted_avg:
                 with torch.no_grad():
-                    avg_model.linear.weight.copy_(avg_weight)
+                    avg_model.linear.weight.copy_(weight)
                 sup_err = get_sup_error_lsp(lam_min, lam_max, true_losses,
                                             avg_model, testDataLoader, loss_fn, device)
             else:
@@ -97,11 +97,8 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
         else:
             norm_grad_list.append(new_grad_norm)
 
-    if weighted_avg:
-        return num_pass_history, sup_err_history, avg_weight, lr, itr
-    else:
-        return num_pass_history, sup_err_history, model.linear.weight.clone().detach(), lr, itr
-
+    return num_pass_history, sup_err_history, weight, lr, itr
+    
 
 def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
                  trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, true_losses,
