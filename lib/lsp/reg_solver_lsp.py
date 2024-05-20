@@ -1,36 +1,46 @@
 import torch
 
-# trace_frequency is measured in number of batches. -1 means don't print
-def train_lsp(dataloader, model, loss_fn, optimizer, distribution='uniform', device='cpu', trace_frequency=-1):
+# itr: input is number of iterations run before current epoch, returns number of iterations run after current epoch
+# avg_weight: keeps track of and updates weighted average iterates including before current epoch according to Lacoste-Julien et al.
+def train_lsp(itr, t, avg_weight, dataloader, model, loss_fn, optimizer, step_size=None, const=None, distribution='uniform', device='cpu'):
     model.train()
-
+    avg_weight = avg_weight
     for batch, (X_train, y_train) in enumerate(dataloader):
         X_train, y_train = X_train.to(device), y_train.to(device)
-        
+
         rndm_lam = torch.tensor(0.5)
         # SGD picks random regulation parameter lambda
         if distribution == 'uniform':
             rndm_lam = torch.torch.distributions.Uniform(0, 1).sample().cpu()
         elif distribution == 'exponential':
             rndm_lam = torch.torch.distributions.Exponential(1).sample().cpu()
-        # print(f"random lam = {rndm_lam}")
 
         loss = loss_fn(rndm_lam, X_train, y_train, model, device)
-        
+
+        if step_size is not None:
+            # shrink learning rate as customized
+            lr = step_size(t, const)
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
+
         # Backpropagation
         optimizer.zero_grad()
         loss.backward()
-        
+        # record raw gradient
         grad = model.linear.weight.grad.clone().detach()
-        
         optimizer.step()
-        
-        # if (trace_frequency > 0) & (batch % trace_frequency == 0):
-        #     loss, current = loss.item(), (batch + 1) * len(X_train)
-            #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-    return grad
+
+        # update weighted average iterates
+        rho = 2 / (itr+3)
+        itr += 1
+        if itr>50: # forgets first 50 iterations which are usually bad
+            avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()
+        else:
+            avg_weight = model.linear.weight.clone().detach()
+
+    return grad, avg_weight, itr
     
-# Test function
+# Test function computes loss for a fixed input hyperparameter lam
 def test_lsp(dataloader, model, loss_fn, lam, device='cpu'):
     model.eval() #important
     with torch.no_grad():  #makes sure we don't corrupt gradients and is faster
