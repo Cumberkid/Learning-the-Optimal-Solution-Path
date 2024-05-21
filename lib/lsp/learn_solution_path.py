@@ -104,7 +104,8 @@ def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
                  trainDataLoader, testDataLoader, loss_fn, lam_min, lam_max, true_losses,
                  init_lr=1e-3, diminish=True, gamma=0.97, q=1.3, k_0=5, thresh_lr=0.6,
                  step_size=None, const=None, init_weight=None, intercept=True, weighted_avg=True,
-                 thresh_basis=None, record_frequency=10, distribution='uniform', device='cpu', trace_frequency=-1):
+                 avg_upon_prev=False, thresh_basis=None, record_frequency=10, 
+                 distribution='uniform', device='cpu', trace_frequency=-1):
     if step_size is not None:
         diminish = False
 
@@ -134,7 +135,8 @@ def lsp_boosting(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
         breaks.append(break_itr)
         if const is not None:
             const = const/(2**0.5)
-
+        if not avg_upon_prev:
+            itr = 0
         # increase basis dimension by 1
         weight = torch.cat((weight, torch.zeros(weight.size(dim=0), 1)), 1)
 
