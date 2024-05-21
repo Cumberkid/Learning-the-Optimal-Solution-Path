@@ -74,7 +74,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
                     param_group['lr'] = lr
 
         # record iteration result
-        if (record_frequency > 0) & *((t+1) % record_frequency == 0):
+        if (record_frequency > 0) & ((t+1) % record_frequency == 0):
             num_pass_history.append(t+1)
             if weighted_avg:
                 with torch.no_grad():
