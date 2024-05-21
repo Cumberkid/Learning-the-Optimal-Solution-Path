@@ -8,7 +8,7 @@ def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, reg_params
     
     losses = []
     coarse_grid = 0
-    weight = torch.tensor(weights[coarse_grid])
+    weight = weights[coarse_grid].clone().detach()
     intercept = intercepts[coarse_grid]
     reg_param = reg_params[coarse_grid]
     model = Logistic_Regression(len(weight), 1, reg_param, weight, intercept).to(device)
@@ -21,7 +21,7 @@ def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, reg_params
                 model.reg_param = reg_params[coarse_grid]
                     
                 with torch.no_grad():
-                    model.linear.weight.copy_(torch.tensor(weights[coarse_grid]))
+                    model.linear.weight.copy_(weights[coarse_grid].clone().detach())
                     model.linear.bias.data.fill_(intercepts[coarse_grid])
         # approximate solution uses the linear weight of coarse grid model to test for regression parameter of the fine grid
         approx_loss = test(data_loader, model, loss_fn, lam, device)
