@@ -34,7 +34,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, test_model, optimizer, tr
         itr, weight, intercept = train(itr, weight, intercept, trainDataLoader, model, loss_fn, 
                                        optimizer, weighted_avg, step_size, const, device)
       
-        if (true_loss_list is not None) and (oracle):
+        if true_loss_list is not None:
             if (t+1) % check_frequency == 0:
                 # do an accuracy check
                 test_model.reg_param = lam
@@ -44,11 +44,13 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, test_model, optimizer, tr
                 approx_loss = test(testDataLoader, test_model, loss_fn, lam, device)
                     
                 error = approx_loss - true_loss
+                
                 # check if we are within stopping criterion
-                if error <= stopping_criterion:
-                    passes += (t+1)
-                    early_stop = True
-                    break  # Early stop
+                if oracle:
+                  if error <= stopping_criterion:
+                      passes += (t+1)
+                      early_stop = True
+                      break  # Early stop
             
     if not early_stop:
         passes += epochs
