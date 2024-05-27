@@ -2,7 +2,7 @@ import torch
 import math
 import numpy as np
 from scipy.interpolate import BSpline
-from scipy.special import legendre, eval_laguerre
+from scipy.special import legendre, eval_laguerre, eval_chebyu
 
 # monomials
 def monomials(lam, basis_dim, device='cpu'):
@@ -19,6 +19,11 @@ def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
 # dampened Laguerre polynomials
 def dampen_laguerre(lam, basis_dim, device='cpu'):
     vec = torch.tensor([(np.sqrt(10) * np.exp(-0.45 * lam) * eval_laguerre(i, lam)) for i in range(basis_dim)], dtype=torch.float32)
+    return vec.to(device)
+
+# chebyshev polynomial of the second kind
+def chebyshev_second_kind(lam, basis_dim, device='cpu'):
+    vec = torch.tensor([eval_chebyu(i, lam) for i in range(basis_dim)], dtype=torch.float32)
     return vec.to(device)
     
 # cubic bspline basis
