@@ -17,7 +17,7 @@ def train_lsp(itr, init_weight, dataloader, model, loss_fn, optimizer, weighted_
         if distribution == 'uniform':
             rndm_lam = torch.torch.distributions.Uniform(0, 1).sample().cpu()
         elif distribution == 'exponential':
-            rndm_lam = torch.torch.distributions.Exponential(1).sample().cpu()
+            rndm_lam = torch.torch.distributions.Exponential(0.1).sample().cpu()
 
         loss = loss_fn(rndm_lam, X_train, y_train, model, device)
 
