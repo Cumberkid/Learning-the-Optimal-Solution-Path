@@ -19,7 +19,7 @@ def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
 # dampened Laguerre polynomials
 from scipy.special import eval_laguerre
 def dampen_laguerre(lam, basis_dim, device='cpu'):
-    vec = torch.tensor([(np.exp(-0.45 * lam) * eval_laguerre(i, lam)) for i in range(basis_dim)], dtype=torch.float32)
+    vec = torch.tensor([(np.sqrt(10) * np.exp(-0.45 * lam) * eval_laguerre(i, lam)) for i in range(basis_dim)], dtype=torch.float32)
     return vec.to(device)
     
 # cubic bspline basis
