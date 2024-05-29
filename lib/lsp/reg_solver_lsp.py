@@ -19,7 +19,7 @@ def train_lsp(itr, init_weight, dataloader, model, loss_fn, optimizer, weighted_
         elif distribution == 'exponential':
             rndm_lam = torch.torch.distributions.Exponential(0.1).sample().cpu()
             while rndm_lam > 20:
-                randm_lam/=2
+                rndm_lam/=2
 
         loss = loss_fn(rndm_lam, X_train, y_train, model, device)
 
