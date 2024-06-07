@@ -16,9 +16,20 @@ def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
     vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed) for i in range(basis_dim)], dtype=torch.float32)
     return vec.to(device)
 
+# # dampened Laguerre polynomials
+# def dampen_laguerre(lam, basis_dim, device='cpu'):
+#     vec = torch.tensor([(np.sqrt(10) * np.exp(-0.45 * lam) * eval_laguerre(i, lam)) for i in range(basis_dim)], dtype=torch.float32)
+#     return vec.to(device)
+
 # dampened Laguerre polynomials
 def dampen_laguerre(lam, basis_dim, device='cpu'):
-    vec = torch.tensor([(np.sqrt(10) * np.exp(-0.45 * lam) * eval_laguerre(i, lam)) for i in range(basis_dim)], dtype=torch.float32)
+    vec = []
+    for i in range(basis_dim):
+        if i==0:
+            vec.append(np.sqrt(10) * eval_laguerre(i, lam))
+        else:
+            vec.append((np.sqrt(10) * np.exp(-0.45 * lam) * eval_laguerre(i, lam)))
+    vec = torch.tensor(vec, dtype=torch.float32)
     return vec.to(device)
 
 # chebyshev polynomial of the second kind
