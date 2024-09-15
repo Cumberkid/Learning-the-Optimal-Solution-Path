@@ -36,7 +36,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
     optimizer.zero_grad()
 
     # memorize the last 10 gradient info to decide if need to add more basis function
-    norm_grad_list = deque(maxlen=10)
+    norm_grad_list = deque(maxlen=20)
 
     # initialize weighted averaging sum
     if weighted_avg:
@@ -91,11 +91,9 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
 
         # when the change in second moment of gradient is small enough,
         # stop to add more basis functions
-        new_grad_norm = new_grad.norm(p=2)**2
-        if len(norm_grad_list) >= 10 and abs(norm_grad_list[0] - new_grad_norm) < thresh_basis(basis_dim):
+        norm_grad_list.append(new_grad.norm(p=2)**2)
+        if (len(norm_grad_list) >= 20) and abs(sum(list(norm_grad_list)[:10]) - sum(list(norm_grad_list)[-10:])) < thresh_basis(basis_dim):
             break
-        else:
-            norm_grad_list.append(new_grad_norm)
 
     return num_pass_history, sup_err_history, weight, lr, itr
     
