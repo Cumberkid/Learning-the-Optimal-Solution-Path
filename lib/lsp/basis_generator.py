@@ -26,7 +26,7 @@ def dampen_laguerre(lam, basis_dim, device='cpu'):
     vec = []
     for i in range(basis_dim):
         if i==0:
-            vec.append(np.sqrt(10) * eval_laguerre(i, lam))
+            vec.append(eval_laguerre(i, lam))
         else:
             vec.append((np.sqrt(10) * np.exp(-0.45 * lam) * eval_laguerre(i, lam)))
     vec = torch.tensor(vec, dtype=torch.float32)
