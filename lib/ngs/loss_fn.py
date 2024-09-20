@@ -55,3 +55,10 @@ def reg_exp_weighted_logit(lam, X, y, model):
     loss += 0.25 * 0.5 * model.ridge_term()
 
     return loss
+
+def allocation_cost(lam0, lam1, decomp_cov, mean, model):
+    temp1 = model(decomp_cov)
+    temp2 = model(mean)
+    loss = lam0 * temp1.norm(p=2)**2 + lam1 * temp2 + model.penalty()
+
+    return loss
