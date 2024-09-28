@@ -4,11 +4,11 @@ from torch import nn
 # this initializes with random weights. Need to either set a seed or force initialization somewhere for reproducibility.
 # automatically fits an intercept. To turn off intercept, set bias=False in nn.Linear()
 class Logistic_Regression(nn.Module):
-    def __init__(self, input_dim, output_dim, reg_param, init_weight, init_intercept):
+    def __init__(self, input_dim, output_dim, hyper_param, init_weight, init_intercept):
         super(Logistic_Regression, self).__init__()
         self.linear = nn.Linear(input_dim, output_dim, bias=True)
         # self.actv = nn.Sigmoid()
-        self.reg_param = reg_param
+        self.hyper_param = hyper_param
         
         # initialize for better performance
         with torch.no_grad():

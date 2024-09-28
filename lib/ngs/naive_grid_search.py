@@ -1,7 +1,7 @@
 import numpy as np
 import torch
+from lib.ngs.solver import train, test
 from lib.ngs.log_reg_module import Logistic_Regression
-from lib.ngs.reg_solver import train, test
 
 """# Naive Grid Search"""
 
@@ -20,9 +20,10 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, test_model, optimizer, tr
         lam = lam_max - i * fine_delta_lam
         # print(f"nearest i = {i}\t lam = {lam}")
 
-    model.reg_param = lam
+    model.hyper_param = lam
     weight = model.linear.weight.clone().detach().squeeze() # weighted averaging sum initialized
-    intercept = model.linear.bias.clone().detach().squeeze()
+    if model.bias is not None:
+        intercept = model.linear.bias.clone().detach().squeeze()
 
     early_stop = False
     itr = 0
@@ -37,10 +38,11 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, test_model, optimizer, tr
         if true_loss_list is not None:
             if (t+1) % check_frequency == 0:
                 # do an accuracy check
-                test_model.reg_param = lam
+                test_model.hyper_param = lam
                 with torch.no_grad():
                     test_model.linear.weight.copy_(weight)
-                    test_model.linear.bias.copy_(intercept)
+                    if model.bias is not None:
+                        test_model.linear.bias.copy_(intercept)
                 approx_loss = test(testDataLoader, test_model, loss_fn, lam, device)
                     
                 error = approx_loss - true_loss
@@ -70,7 +72,7 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
     if true_loss_list is not None:
         fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list) - 1)
         
-    reg_params = []
+    hyper_params = []
     weights = []
     intercepts = []
     total_passes = 0
@@ -103,8 +105,8 @@ def naive_grid_search(lam_min, lam_max, num_grid, epochs, loss_fn, trainDataLoad
         weights.append(weight)
         intercepts.append(intercept)               
 
-        reg_params.append(model.reg_param)
+        hyper_params.append(model.hyper_param)
         total_passes += passes
         grid_pass_error = max([grid_pass_error, grid_error])
 
-    return total_passes, reg_params, intercepts, weights, grid_pass_error
+    return total_passes, hyper_params, intercepts, weights, grid_pass_error
