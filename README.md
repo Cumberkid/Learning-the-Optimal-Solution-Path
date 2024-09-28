@@ -6,22 +6,36 @@ LSP is an overall framework for learning the whole solution path for a family of
 
 This implementation of LSP is based on [Pytorch Neural Network Modules](https://pytorch.org/docs/stable/generated/torch.nn.Module.html) API.
 
+We compare LSP with a naive grid search method.
+
 ## Overview
 
-The code is divided into two folders:
-
-- `lib` contains all of the files needed to run the method.
-- `experiments` contains files concerning the experiments in the paper.
+- `lib` contains all of the files needed to run LSP and naive grid search.
+- `data` contains data files concerning the experiments in the paper, including both input datasets and results.
+- `notebooks` contain all scripts and outputs for the experiments.
+- 
 
 ## Experiments
 
-* `fair-regression` contains our main experiments associated with the paper. It runs a reweighted logistic regression on the highly imbalanced [law school admission Bar passage dataset](https://www.kaggle.com/datasets/danofer/law-school-admissions-bar-passage?resource=download)
-  
-  - The `fair-regression/data` folder contains the dataset `bar_pass_prediction.csv` used for this experiment.
+We carry out two sets of experiments: `reweighted-logistic-regression` and `portfolio-allocation`.
+
+* `reweighted-logistic-regression` runs a reweighted logistic regression on the highly imbalanced [law school admission Bar passage dataset](https://www.kaggle.com/datasets/danofer/law-school-admissions-bar-passage?resource=download)
+   
+  - We use two kinds of polynomial bases for LSP: Lagurre polynomials and Legendre polynomials. The results are contained in `reweighted-logistic-regression/laguerre` and `reweighted-logistic-regression/legendre` folders respectively.
+
+  - The loss function runs on a single hyperparameter (1-d).
+      
+  - The `data/eweighted-logistic-regression` folder contains the dataset `bar_pass_prediction.csv` used for this experiment.
     
-  - The `fair-regression/notebooks` folder contains the scripts written with Colab.
+
+ 
     
-* `resularized-logit` contains some exploratory experiments. It runs a regularized logistic regression on the [Wisconsin breast cancer dataset](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html#sklearn.datasets.load_breast_cancer).
   
-* `compare-basis` contains some exploratory experiments on the comparison between different basis functions.
+* `portfolio-allocation` runs a portfolio allocation problem: $\min_\theta \lambda_1\theta^\top Q \theta - \lambda_2 \mu^\top \theta + \sum_i (\theta_i^2 + .01^2)^{1/2} - .01$ under the constraint that $\sum_i \theta = 1$, where $Q$ is the covariance matrix of the `10_Industry_Portfolios_10_Year_Monthly.csv` dataset, and $mu$ is the expected return of the same dataset. 
+
+  - We use a bivariate Legendre polynomial basis for LSP.
+ 
+  - The loss function runs on a 2 hyperparameters (2-d).
+    
+  - The `data/portfolio-allocation` folder contains the dataset `10_Industry_Portfolios_10_Year_Monthly.csv`, `decomp_cov.csv` and `mean.csv` used for this experiment. `decomp_cov.csv` and `mean.csv` are the covariance matrix and expected return computed beforehand.
 
