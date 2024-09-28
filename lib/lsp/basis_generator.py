@@ -7,13 +7,31 @@ from scipy.special import legendre, eval_laguerre, eval_chebyu
 # monomials
 def monomials(lam, basis_dim, device='cpu'):
     vec = torch.tensor([lam**i for i in range(basis_dim)], dtype=torch.float32)
-    return bec.to(device)
+    return vec.to(device)
     
 # scaled and shifted Legendre polynomials
 def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
     # Transform the lam to [-1, 1] interval
     lam_transformed = 2 * lam - 1
     vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed) for i in range(basis_dim)], dtype=torch.float32)
+    return vec.to(device)
+
+# bivariate Legendre polynomials
+def bivariate_legendre(hyper_params, basis_dim, device='cpu'):
+    # Transform the lam to [-1, 1] interval
+    lam_transformed = [2 * lam - 1 for lam in hyper_params]
+
+    vec = [legendre(0)(0)] # constant term is always 1
+    if basis_dim <= 1:
+        return torch.tensor(vec, dtype=torch.float32).to(device)
+    
+    for i in range(1, basis_dim):
+        bivariate = 0
+        for j in range(i+1):
+            bivariate += legendre(j)(lam_transformed[0]) * legendre(i-j)(lam_transformed[1])
+        vec.append(bivariate)
+
+    vec = torch.tensor(vec, dtype=torch.float32)
     return vec.to(device)
 
 # # dampened Laguerre polynomials
