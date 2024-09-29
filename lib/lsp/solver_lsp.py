@@ -40,14 +40,11 @@ def train_lsp(itr, init_weight, dataloader, model, loss_fn, optimizer, lam_min=[
         grad = model.linear.weight.grad.clone().detach()
         optimizer.step()
         
-        if weighted_avg:
+        rho = 2 / (itr+3)
+        itr += 1
+        if weighted_avg and itr > 50:
             # update weighted average iterates
-            rho = 2 / (itr+3)
-            itr += 1
-            if itr > 50: # forgets first 50 iterations which are usually bad
-                avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()
-            else:
-                avg_weight = model.linear.weight.clone().detach()
+            avg_weight = (1-rho) * avg_weight + rho * model.linear.weight.clone().detach()
         else:
             avg_weight = model.linear.weight.clone().detach()
 
