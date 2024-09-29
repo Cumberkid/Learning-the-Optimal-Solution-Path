@@ -31,25 +31,21 @@ def GD_on_a_grid(fix_lam, running_lam, lam_max, epochs, loss_fn, model, test_mod
     itr = 0
     passes = 0
     error = 0
-
-    # # make sure all hyper parameters sum up to 1
-    # if running_lam + fix_lam > 1:
-    #     return passes, error, weight, intercept
                    
     for t in range(epochs):
 
         itr, weight, intercept = train(itr, weight, intercept, trainDataLoader, model, loss_fn, 
                                        optimizer, weighted_avg, step_size, const, device)
-      
+        # print(model.hyper_param, weight)
         if true_loss_list is not None:
             if (t+1) % check_frequency == 0:
                 # do an accuracy check
-                test_model.hyper_param = [fix_lam, running_lam]
+                test_model.hyper_param = model.hyper_param
                 with torch.no_grad():
                     test_model.linear.weight.copy_(weight)
                     if model.bias is not None:
                         test_model.linear.bias.copy_(intercept)
-                approx_loss = test(testDataLoader, test_model, loss_fn, [fix_lam, running_lam], device)
+                approx_loss = test(testDataLoader, test_model, loss_fn, test_model.hyper_param, device)
                     
                 error = approx_loss - true_loss
                 
@@ -95,7 +91,7 @@ def naive_grid_search(fix_lam, lam_min, lam_max, num_grid, epochs, loss_fn, trai
     optimizer.zero_grad()
     
     for running_lam in lambdas:
-        # print(f"Running model on lambda = {lam}")
+        # print(f"Running model on lambda = {running_lam}")
         passes, grid_error, weight, intercept = GD_on_a_grid(fix_lam, running_lam, lam_max, epochs, 
                                                             loss_fn, model, test_model, optimizer,
                                                             trainDataLoader=trainDataLoader,
@@ -108,6 +104,7 @@ def naive_grid_search(fix_lam, lam_min, lam_max, num_grid, epochs, loss_fn, trai
                                                             stopping_criterion=stopping_criterion,
                                                             check_frequency=check_frequency,
                                                             device=device)
+        # print(running_lam, weight)
         weights.append(weight)
         intercepts.append(intercept)               
 

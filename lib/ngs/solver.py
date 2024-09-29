@@ -12,6 +12,7 @@ def train(itr, init_weight, init_intercept, dataloader, model, loss_fn, optimize
         # print(batch, len(X_train))
 
         loss = loss_fn(model.hyper_param, X_train, y_train, model, device)
+        # print(loss)
         
         if step_size is not None:
             # shrink learning rate as customized
@@ -26,15 +27,15 @@ def train(itr, init_weight, init_intercept, dataloader, model, loss_fn, optimize
         # update weighted average iterate
         rho = 2 / (itr+3)
         itr += 1
-        if weighted_avg:
-            if itr > 50:
-                weight = (1-rho) * weight + rho * model.linear.weight.clone().detach().squeeze()
-                if model.bias is not None:
-                    intercept = (1-rho) * intercept + rho * model.linear.bias.clone().detach().squeeze()
-            else:
-                weight = model.linear.weight.clone().detach().squeeze()
-                if model.bias is not None:
-                    intercept = model.linear.bias.clone().detach().squeeze()
+        if weighted_avg and itr > 50:
+            weight = (1-rho) * weight + rho * model.linear.weight.clone().detach().squeeze()
+            if model.bias is not None:
+                intercept = (1-rho) * intercept + rho * model.linear.bias.clone().detach().squeeze()
+
+        else:
+            weight = model.linear.weight.clone().detach().squeeze()
+            if model.bias is not None:
+                intercept = model.linear.bias.clone().detach().squeeze()
     return itr, weight, intercept
 
 # test function computes objective loss for a specific input hyperparameter lam

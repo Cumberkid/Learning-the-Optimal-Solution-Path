@@ -53,6 +53,7 @@ def get_losses_2d(lam_min_2d, lam_max_2d, fine_delta_lam_2d, intercepts_2d, weig
         if (coarse_grid + 1) < len(hyper_params_2d):
             if (hyper_params_2d[coarse_grid][0][0] - fix_lam) > (fix_lam - hyper_params_2d[coarse_grid + 1][0][0]):
                 coarse_grid += 1
+        # print(fix_lam, hyper_params_2d[coarse_grid][0][0])
         losses = get_losses(fix_lam, lam_min_2d[1], lam_max_2d[1], fine_delta_lam_2d[1], intercepts_2d[coarse_grid], 
                             weights_2d[coarse_grid], hyper_params_2d[coarse_grid][:, 1], data_loader, loss_fn, device)
         losses_2d.append(losses)
