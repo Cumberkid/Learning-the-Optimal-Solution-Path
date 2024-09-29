@@ -4,7 +4,7 @@ from lib.ngs.solver import test
 
 """Helper function that takes in a list of coarse grid models and returns the simulated losses and errors over $\lambda\in[0,1]$ compared to the exact solutions."""
 # return the simulated losses accross the solution path
-def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, hyper_params, data_loader, loss_fn, device="cpu"):
+def get_losses(lam_min, lam_max, num_grid, intercepts, weights, hyper_params, data_loader, loss_fn, device="cpu"):
     
     losses = []
     coarse_grid = 0
@@ -12,9 +12,9 @@ def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, hyper_para
     intercept = intercepts[coarse_grid]
     hyper_param = hyper_params[coarse_grid]
     model = Logistic_Regression(len(weight), 1, hyper_param, weight, intercept).to(device)
+    lambdas = np.linspace(lam_max, lam_min, num_grid)
     
-    for i in range(round((lam_max - lam_min) / fine_delta_lam) + 1):
-        lam = lam_max - i * fine_delta_lam
+    for lam in lambdas:
         if (coarse_grid + 1) < len(hyper_params):
             if (hyper_params[coarse_grid] - lam) > (lam - hyper_params[coarse_grid + 1]):
                 coarse_grid += 1
@@ -32,8 +32,8 @@ def get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, hyper_para
 
 # return the absolute errors compared to the true loss accross the solution path
 def get_errs(lam_min, lam_max, true_loss_list, intercepts, weights, hyper_params, data_loader, loss_fn, device="cpu"):
-    fine_delta_lam = (lam_max - lam_min)/(len(true_loss_list)-1)
-    losses = get_losses(lam_min, lam_max, fine_delta_lam, intercepts, weights, hyper_params, data_loader, loss_fn, device)
+    num_grid = len(true_loss_list)
+    losses = get_losses(lam_min, lam_max, num_grid, intercepts, weights, hyper_params, data_loader, loss_fn, device)
     errs = losses - true_loss_list
     return errs
 

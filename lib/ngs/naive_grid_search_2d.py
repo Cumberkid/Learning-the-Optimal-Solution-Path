@@ -129,12 +129,18 @@ def naive_grid_search_2d(lam_min_2d, lam_max_2d, num_grid_2d, epochs, loss_fn, t
 
     # create a list on the first hyper parameter
     lambdas = np.linspace(lam_max_2d[0], lam_min_2d[0], num_grid_2d[0])
-    i = 0
     running_list = None
     for fix_lam in lambdas:
         if true_loss_list is not None:
+            fine_delta_lam = (lam_max_2d[0] - lam_min_2d[0])/(len(true_loss_list) - 1)
+            # true loss
+            i = round((lam_max_2d[0] - fix_lam) / fine_delta_lam)
+            if i >= len(true_loss_list):
+                i = len(true_loss_list) - 1
             running_list = true_loss_list[i]
-            i += 1
+            fix_lam = lam_max_2d[0] - i * fine_delta_lam
+            # print(f"nearest i = {i}\t lam = {lam}")
+            
 
         total_passes, hyper_params, intercepts, weights, grid_pass_error = naive_grid_search(fix_lam, lam_min_2d[1], lam_max_2d[1], num_grid_2d[1], 
                                                                                              epochs, loss_fn, trainDataLoader,
