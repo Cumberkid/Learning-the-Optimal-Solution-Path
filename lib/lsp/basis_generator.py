@@ -2,7 +2,8 @@ import torch
 import math
 import numpy as np
 from scipy.interpolate import BSpline
-from scipy.special import legendre, eval_laguerre, eval_chebyu
+from scipy.special import legendre, eval_laguerre, eval_chebyu, eval_chebyt
+from numpy.polynomial.chebyshev import chebgrid2d
 
 # monomials
 def monomials(lam, basis_dim, device='cpu'):
@@ -21,7 +22,7 @@ def bivariate_legendre(hyper_params, basis_dim, device='cpu'):
     # Transform the lam to [-1, 1] interval
     lam_transformed = [2 * lam - 1 for lam in hyper_params]
 
-    vec = [legendre(0)(0)] # constant term is always 1
+    vec = [1] # constant term is always 1
     if basis_dim <= 1:
         return torch.tensor(vec, dtype=torch.float32).to(device)
     
@@ -29,15 +30,18 @@ def bivariate_legendre(hyper_params, basis_dim, device='cpu'):
         bivariate = 0
         for j in range(i+1):
             bivariate += legendre(j)(lam_transformed[0]) * legendre(i-j)(lam_transformed[1])
-        vec.append(bivariate)
+        vec.append((1/(i+1)**2) * bivariate)
 
     vec = torch.tensor(vec, dtype=torch.float32)
     return vec.to(device)
 
-# # dampened Laguerre polynomials
-# def dampen_laguerre(lam, basis_dim, device='cpu'):
-#     vec = torch.tensor([(np.sqrt(10) * np.exp(-0.45 * lam) * eval_laguerre(i, lam)) for i in range(basis_dim)], dtype=torch.float32)
-#     return vec.to(device)
+def funny_legendre(hyper_params, basis_dim, device='cpu'):
+    # Transform the lam to [-1, 1] interval
+    lam_transformed_0 = 2 * hyper_params[0] - 1
+    lam_transformed_1 = 2 * hyper_params[1] - 1
+    vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed_0) * legendre(i)(lam_transformed_1) for i in range(basis_dim)], dtype=torch.float32)
+    return vec.to(device)
+
 
 # dampened Laguerre polynomials
 def dampen_laguerre(lam, basis_dim, device='cpu'):
@@ -53,6 +57,23 @@ def dampen_laguerre(lam, basis_dim, device='cpu'):
 # chebyshev polynomial of the second kind
 def chebyshev_second_kind(lam, basis_dim, device='cpu'):
     vec = torch.tensor([eval_chebyu(i, lam) for i in range(basis_dim)], dtype=torch.float32)
+    return vec.to(device)
+
+def bivariate_chebyshev(hyper_params, basis_dim, device='cpu'):
+    # Transform the lam to [-1, 1] interval
+    lam_transformed = [2 * lam - 1 for lam in hyper_params]
+
+    vec = [1] # constant term is always 1
+    if basis_dim <= 1:
+        return torch.tensor(vec, dtype=torch.float32).to(device)
+    
+    for i in range(1, basis_dim):
+        bivariate = 0
+        for j in range(i+1):
+            bivariate += eval_chebyt(j, lam_transformed[0]) * eval_chebyt(i-j, lam_transformed[0]) 
+        vec.append((1/(i+1)**2) * bivariate)
+
+    vec = torch.tensor(vec, dtype=torch.float32)
     return vec.to(device)
     
 # cubic bspline basis

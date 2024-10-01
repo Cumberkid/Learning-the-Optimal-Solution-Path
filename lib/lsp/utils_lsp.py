@@ -36,7 +36,9 @@ def get_losses_lsp_2d(lam_min_2d, lam_max_2d, num_grid_2d, model, data_loader, l
 # input true_loss_list must be numpy array
 def get_errs_lsp_2d(lam_min, lam_max, true_loss_list, model, data_loader, loss_fn, device='cpu'):
     losses = get_losses_lsp_2d(lam_min, lam_max, [len(true_loss_list), len(true_loss_list[0])], model, data_loader, loss_fn, device)
-    return losses - true_loss_list
+    errs = losses - true_loss_list
+    # print(errs)
+    return errs
     
 # return the supremum absolute error compared to the true loss accross the 2-d solution path  
 def get_sup_error_lsp_2d(lam_min, lam_max, true_loss_list, model, data_loader, loss_fn, device='cpu'):

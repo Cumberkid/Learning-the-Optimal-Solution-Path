@@ -1,4 +1,5 @@
 import torch
+from scipy.stats import semicircular, uniform, expon
 
 # itr: input is number of iterations run before current epoch, returns number of iterations run after current epoch
 # avg_weight: keeps track of and updates weighted average iterates including before current epoch according to Lacoste-Julien et al.
@@ -16,15 +17,13 @@ def train_lsp(itr, init_weight, dataloader, model, loss_fn, optimizer, lam_min=[
             hyper_params.append(torch.tensor(0.5))
             # SGD picks random regulation parameter lambda
             if distribution == 'uniform':
-                hyper_params[i] = torch.torch.distributions.Uniform(lam_min[i], lam_max[i]).sample().cpu()
+                hyper_params[i] = uniform.rvs(loc=lam_min[i], scale=lam_max[i]-lam_min[i])
             elif distribution == 'exponential':
-                hyper_params[i] = torch.torch.distributions.Exponential(0.1).sample().cpu()
+                hyper_params[i] = expon.rvs(scale=0.1)
                 while hyper_params[i] > 20:
                     hyper_params[i]/=2
-
-        # if standardize_params: # all n+1 hyper params have to sum up to 1
-        #     dummy = torch.torch.distributions.Uniform(0, 1).sample().cpu()
-        #     hyper_params = [x / (sum(hyper_params) + dummy) for x in hyper_params]
+            elif distribution == 'semicircle':
+                hyper_params[i] = ((semicircular.rvs() + 1) / 2 * (lam_max[i] - lam_min[i]) + lam_min[i])
 
         loss = loss_fn(hyper_params, X_train, y_train, model, device)
 
