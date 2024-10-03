@@ -20,7 +20,7 @@ def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
 # bivariate Legendre polynomials
 def bivariate_legendre(hyper_params, basis_dim, device='cpu'):
     # Transform the lam to [-1, 1] interval
-    lam_transformed = [2 * lam - 1 for lam in hyper_params]
+    lam_transformed = [2 * hyper_params[0] - 1, 2.5*hyper_params[1] - 1.5]
 
     vec = [1] # constant term is always 1
     if basis_dim <= 1:
@@ -30,16 +30,9 @@ def bivariate_legendre(hyper_params, basis_dim, device='cpu'):
         bivariate = 0
         for j in range(i+1):
             bivariate += legendre(j)(lam_transformed[0]) * legendre(i-j)(lam_transformed[1])
-        vec.append((1/(i+1)**2) * bivariate)
+        vec.append(bivariate)
 
     vec = torch.tensor(vec, dtype=torch.float32)
-    return vec.to(device)
-
-def funny_legendre(hyper_params, basis_dim, device='cpu'):
-    # Transform the lam to [-1, 1] interval
-    lam_transformed_0 = 2 * hyper_params[0] - 1
-    lam_transformed_1 = 2 * hyper_params[1] - 1
-    vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed_0) * legendre(i)(lam_transformed_1) for i in range(basis_dim)], dtype=torch.float32)
     return vec.to(device)
 
 
@@ -61,7 +54,7 @@ def chebyshev_second_kind(lam, basis_dim, device='cpu'):
 
 def bivariate_chebyshev(hyper_params, basis_dim, device='cpu'):
     # Transform the lam to [-1, 1] interval
-    lam_transformed = [2 * lam - 1 for lam in hyper_params]
+    lam_transformed = [2 * hyper_params[0] - 1, 2.5*hyper_params[1] - 1.5]
 
     vec = [1] # constant term is always 1
     if basis_dim <= 1:
@@ -71,7 +64,7 @@ def bivariate_chebyshev(hyper_params, basis_dim, device='cpu'):
         bivariate = 0
         for j in range(i+1):
             bivariate += eval_chebyt(j, lam_transformed[0]) * eval_chebyt(i-j, lam_transformed[0]) 
-        vec.append((1/(i+1)**2) * bivariate)
+        vec.append(bivariate)
 
     vec = torch.tensor(vec, dtype=torch.float32)
     return vec.to(device)

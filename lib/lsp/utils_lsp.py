@@ -20,6 +20,29 @@ def get_sup_error_lsp(lam_min, lam_max, true_loss_list, model, data_loader, loss
     errs = get_errs_lsp(lam_min, lam_max, true_loss_list, model, data_loader, loss_fn, device)
     return max(errs)
 
+# # return a 2-d numpy array of loss computed on a specified grid over the solution path
+# def get_losses_lsp_2d(lambdas_0, lambdas_1, model, data_loader, loss_fn, device='cpu'):
+#     losses_2d = []
+#     for fix_lam in lambdas_0:
+#         losses = []
+#         for running_lam in lambdas_1:
+#             losses.append(test_lsp(data_loader, model, loss_fn, [fix_lam, running_lam], device))
+#         losses_2d.append(losses)
+#     print(losses_2d)        
+#     return np.array(losses_2d)
+
+# # input true_loss_list must be numpy array
+# def get_errs_lsp_2d(lambdas_0, lambdas_1, true_loss_list, model, data_loader, loss_fn, device='cpu'):
+#     losses = get_losses_lsp_2d(lambdas_0, lambdas_1, model, data_loader, loss_fn, device)
+#     errs = losses - true_loss_list
+#     # print(errs)
+#     return errs
+    
+# # return the supremum absolute error compared to the true loss accross the 2-d solution path  
+# def get_sup_error_lsp_2d(lambdas_0, lambdas_1, true_loss_list, model, data_loader, loss_fn, device='cpu'):
+#     errs_2d = get_errs_lsp_2d(lambdas_0, lambdas_1, true_loss_list, model, data_loader, loss_fn, device)
+#     return np.max(np.array(errs_2d))
+
 # return a 2-d numpy array of loss computed on a specified grid over the solution path
 def get_losses_lsp_2d(lam_min_2d, lam_max_2d, num_grid_2d, model, data_loader, loss_fn, device='cpu'):
     lambdas_0 = np.linspace(lam_max_2d[0], lam_min_2d[0], num_grid_2d[0])
@@ -30,7 +53,7 @@ def get_losses_lsp_2d(lam_min_2d, lam_max_2d, num_grid_2d, model, data_loader, l
         for running_lam in lambdas_1:
             losses.append(test_lsp(data_loader, model, loss_fn, [fix_lam, running_lam], device))
         losses_2d.append(losses)
-            
+    # print(losses_2d)        
     return np.array(losses_2d)
 
 # input true_loss_list must be numpy array
