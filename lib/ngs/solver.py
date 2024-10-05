@@ -29,12 +29,12 @@ def train(itr, init_weight, init_intercept, dataloader, model, loss_fn, optimize
         itr += 1
         if weighted_avg and itr > 50:
             weight = (1-rho) * weight + rho * model.linear.weight.clone().detach().squeeze()
-            if model.bias is not None:
+            if model.linear.bias is not None:
                 intercept = (1-rho) * intercept + rho * model.linear.bias.clone().detach().squeeze()
 
         else:
             weight = model.linear.weight.clone().detach().squeeze()
-            if model.bias is not None:
+            if model.linear.bias is not None:
                 intercept = model.linear.bias.clone().detach().squeeze()
     return itr, weight, intercept
 

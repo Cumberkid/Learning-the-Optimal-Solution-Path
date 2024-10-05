@@ -23,7 +23,7 @@ def get_losses(lam_min, lam_max, num_grid, intercepts, weights, hyper_params, da
                     
                 with torch.no_grad():
                     model.linear.weight.copy_(weights[coarse_grid].clone().detach())
-                    if model.bias is not None:
+                    if model.linear.bias is not None:
                         model.linear.bias.data.fill_(intercepts[coarse_grid])
         # approximate solution uses the linear weight of coarse grid model to test for regression parameter of the fine grid
         approx_loss = test(data_loader, model, loss_fn, lam, device)

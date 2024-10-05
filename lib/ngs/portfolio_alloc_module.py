@@ -9,7 +9,6 @@ class Portfolio_Allocation(nn.Module):
         self.linear = nn.Linear(input_dim, output_dim, bias=False)
         # self.actv = nn.Softplus()
         self.hyper_param = hyper_param
-        self.bias = None
         
         # initialize for better performance
         with torch.no_grad():
