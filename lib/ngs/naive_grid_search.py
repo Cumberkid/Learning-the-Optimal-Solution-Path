@@ -22,7 +22,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, test_model, optimizer, tr
 
     model.hyper_param = lam
     weight = model.linear.weight.clone().detach().squeeze() # weighted averaging sum initialized
-    if model.bias is not None:
+    if model.linear.bias is not None:
         intercept = model.linear.bias.clone().detach().squeeze()
 
     early_stop = False
@@ -41,7 +41,7 @@ def GD_on_a_grid(lam, lam_max, epochs, loss_fn, model, test_model, optimizer, tr
                 test_model.hyper_param = lam
                 with torch.no_grad():
                     test_model.linear.weight.copy_(weight)
-                    if model.bias is not None:
+                    if model.linear.bias is not None:
                         test_model.linear.bias.copy_(intercept)
                 approx_loss = test(testDataLoader, test_model, loss_fn, lam, device)
                     

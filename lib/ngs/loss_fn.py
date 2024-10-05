@@ -58,6 +58,22 @@ def reg_exp_weighted_logit(lam, X, y, model, device="cpu"):
 
     return loss
 
+# # balance expected return, risk, and diversification
+# # constraint is that sum of model weight should be 1. We achieve this by setting the first term of weight
+# # to equal (1- sum of remaining terms of weight)
+# def allocation_cost(hyper_params, decomp_cov, mean, model, device='cpu'):
+#     n = decomp_cov.shape[1]
+#     risk = model(decomp_cov)
+#     exp_rtrn = model(mean.view(-1, 1).T)
+#     mu = .01
+#     theta = model(torch.eye(n).to(device))
+#     # a proximity smoothing on 1-norm    
+#     cost = torch.sum(torch.sqrt(theta**2 + mu**2) - mu)
+#     # input hyperparameter lam is a 2-d array
+#     loss = hyper_params[0] * risk.norm(p=2)**2 - hyper_params[1] * exp_rtrn + cost
+
+#     return loss
+
 # balance expected return, risk, and diversification
 # constraint is that sum of model weight should be 1. We achieve this by setting the first term of weight
 # to equal (1- sum of remaining terms of weight)

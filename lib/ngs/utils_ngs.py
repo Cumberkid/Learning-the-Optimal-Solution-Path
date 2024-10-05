@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from lib.ngs.log_reg_module import Logistic_Regression
 from lib.ngs.solver import test
 
