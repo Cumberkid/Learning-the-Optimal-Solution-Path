@@ -21,18 +21,25 @@ def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
 def bivariate_legendre(hyper_params, basis_dim, device='cpu'):
     # Transform the lam to [-1, 1] interval
     lam_transformed = [2 * hyper_params[0] - 1, 2.5*hyper_params[1] - 1.5]
+    p = math.floor(math.sqrt(basis_dim))
 
-    vec = [1] # constant term is always 1
-    if basis_dim <= 1:
-        return torch.tensor(vec, dtype=torch.float32).to(device)
-    
-    for i in range(1, basis_dim):
-        bivariate = 0
-        for j in range(i+1):
-            bivariate += legendre(j)(lam_transformed[0]) * legendre(i-j)(lam_transformed[1])
-        vec.append(bivariate)
+    vec = []
+
+    for i in range(p):
+        for j in range(p):
+            bivariate = legendre(i)(lam_transformed[0]) * legendre(j)(lam_transformed[1])
+            vec.append(bivariate)
+
+    if p**2 < basis_dim:
+        for i in range(round((basis_dim - p**2)/2)):
+            bivariate = legendre(i)(lam_transformed[0]) * legendre(p)(lam_transformed[1])
+            vec.append(bivariate)
+        for j in range((basis_dim - p**2) - round((basis_dim - p**2)/2)):
+            bivariate = legendre(p)(lam_transformed[0]) * legendre(j)(lam_transformed[1])
+            vec.append(bivariate)
 
     vec = torch.tensor(vec, dtype=torch.float32)
+
     return vec.to(device)
 
 
@@ -55,16 +62,21 @@ def chebyshev_second_kind(lam, basis_dim, device='cpu'):
 def bivariate_chebyshev(hyper_params, basis_dim, device='cpu'):
     # Transform the lam to [-1, 1] interval
     lam_transformed = [2 * hyper_params[0] - 1, 2.5*hyper_params[1] - 1.5]
+    p = math.floor(math.sqrt(basis_dim))
 
-    vec = [1] # constant term is always 1
-    if basis_dim <= 1:
-        return torch.tensor(vec, dtype=torch.float32).to(device)
-    
-    for i in range(1, basis_dim):
-        bivariate = 0
-        for j in range(i+1):
-            bivariate += eval_chebyt(j, lam_transformed[0]) * eval_chebyt(i-j, lam_transformed[0]) 
-        vec.append(bivariate)
+    vec = []
+    for i in range(p):
+        for j in range(p):
+            bivariate = eval_chebyt(i, lam_transformed[0]) * eval_chebyt(j, lam_transformed[1])
+            vec.append(bivariate)
+
+    if p**2 < basis_dim:
+        for i in range(round((basis_dim - p**2)/2)):
+            bivariate = eval_chebyt(i, lam_transformed[0]) * eval_chebyt(p, lam_transformed[1])
+            vec.append(bivariate)
+        for j in range((basis_dim - p**2) - round((basis_dim - p**2)/2)):
+            bivariate = eval_chebyt(p, lam_transformed[0]) * eval_chebyt(j, lam_transformed[1])
+            vec.append(bivariate)
 
     vec = torch.tensor(vec, dtype=torch.float32)
     return vec.to(device)
