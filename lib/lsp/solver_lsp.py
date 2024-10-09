@@ -24,7 +24,9 @@ def train_lsp(itr, init_weight, dataloader, model, loss_fn, optimizer, lam_min=[
                     hyper_params[i]/=2
             elif distribution == 'semicircle':
                 hyper_params[i] = ((semicircular.rvs() + 1) / 2 * (lam_max[i] - lam_min[i]) + lam_min[i])
-
+        if len(hyper_params) == 1:
+            hyper_params = hyper_params[0]
+          
         loss = loss_fn(hyper_params, X_train, y_train, model, device)
 
         if step_size is not None:
