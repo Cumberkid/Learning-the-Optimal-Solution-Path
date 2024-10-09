@@ -45,6 +45,7 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
 
 
     sup_err_history = []
+    sup_err_history_last_itr = []                        
     num_pass_history = []
 
     if diminish:
@@ -87,6 +88,11 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
             else:
                 sup_err = record_fctn(lam_min, lam_max, true_losses,
                                             model, testDataLoader, loss_fn, device)
+
+            # uncomment below to record both weighted avg and last iterate
+            sup_err_last_itr = record_fctn(lam_min, lam_max, true_losses,
+                                            model, testDataLoader, loss_fn, device)
+            sup_err_history_last_itr.append(sup_err_last_itr)
             sup_err_history.append(sup_err)
             if (trace_frequency > 0) & ((t+1) % trace_frequency == 0):
                 print(f"--------approximate solution path for # itr = {t+1} complete--------")
@@ -97,8 +103,10 @@ def learn_solution_path(input_dim, basis_dim, phi_lam, max_epochs, trainDataLoad
         norm_grad_list.append(new_grad.norm(p=2)**2)
         if (len(norm_grad_list) >= 20) and abs(sum(list(norm_grad_list)[:10]) - sum(list(norm_grad_list)[-10:])) < thresh_basis(basis_dim):
             break
-
-    return num_pass_history, sup_err_history, weight, lr, itr
+    # uncomment below to record both weighted avg and last iterate
+    return num_pass_history, sup_err_history, sup_err_history_last_itr, weight, lr, itr
+    # # uncomment below to record only weighted avg or last iterate   
+    # return num_pass_history, sup_err_history, weight, lr, itr
     
 
 def adaptive_lsp(input_dim, start_basis_dim, end_basis_dim, phi_lam, max_epochs,
