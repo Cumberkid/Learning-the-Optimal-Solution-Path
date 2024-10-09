@@ -14,7 +14,7 @@ def monomials(lam, basis_dim, device='cpu'):
 def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
     # Transform the lam to [-1, 1] interval
     lam_transformed = 2 * lam - 1
-    vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed) for i in range(basis_dim)], dtype=torch.float32)
+    vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed) for i in range(basis_dim)], dtype=torch.float32).T
     return vec.to(device)
 
 # bivariate Legendre polynomials
