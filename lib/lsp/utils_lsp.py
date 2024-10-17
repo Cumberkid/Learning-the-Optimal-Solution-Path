@@ -17,7 +17,7 @@ def get_errs_lsp(lam_min, lam_max, true_loss_list, model, data_loader, loss_fn, 
     
 # return the supremum absolute error compared to the true loss accross the solution path  
 def get_sup_error_lsp(lam_min, lam_max, true_loss_list, model, data_loader, loss_fn, device='cpu'):
-    errs = get_errs_lsp(lam_min, lam_max, true_loss_list, model, data_loader, loss_fn, device)
+    errs = get_errs_lsp(lam_min[0], lam_max[0], true_loss_list, model, data_loader, loss_fn, device)
     return max(errs)
 
 # # return a 2-d numpy array of loss computed on a specified grid over the solution path

@@ -12,23 +12,38 @@ def monomials(lam, basis_dim, device='cpu'):
     
 # scaled and shifted Legendre polynomials
 def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
-    # Transform the lam to [-1, 1] interval
-    lam_transformed = 2 * lam - 1
-    vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam_transformed) for i in range(basis_dim)], dtype=torch.float32)
+    vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam) for i in range(basis_dim)], dtype=torch.float32)
     return vec.to(device)
 
+# # bivariate Legendre polynomials
+# def bivariate_legendre(hyper_params, basis_dim, device='cpu'):
+#     p = math.ceil(math.sqrt(2*basis_dim))
+
+#     vec = []
+#     for i in range(p):
+#         for j in range(i+1):
+#             bivariate = legendre(j)(hyper_params[0]) * legendre(i-j)(hyper_params[1])
+#             vec.append(bivariate)
+
+#     vec = torch.tensor(vec, dtype=torch.float32)[:basis_dim]
+
+#     return vec.to(device)
+
 # bivariate Legendre polynomials
+# only takes in basis_dim = square of integer value
 def bivariate_legendre(hyper_params, basis_dim, device='cpu'):
-    # Transform the lam to [-1, 1] interval
-    lam_transformed = [2 * hyper_params[0] - 1, 2.5*hyper_params[1] - 1.5]
-    p = math.ceil(math.sqrt(2*basis_dim))
+    p = round(math.sqrt(basis_dim))
 
     vec = []
     for i in range(p):
         for j in range(i+1):
-            bivariate = legendre(j)(lam_transformed[0]) * legendre(i-j)(lam_transformed[1])
+            # print(i, j)
+            bivariate = legendre(i)(hyper_params[0]) * legendre(j)(hyper_params[1])
             vec.append(bivariate)
-
+        for j in range(-i+1, 1):
+            # print(-j, i)
+            bivariate = legendre(-j)(hyper_params[0]) * legendre(i)(hyper_params[1])
+            vec.append(bivariate)
     vec = torch.tensor(vec, dtype=torch.float32)[:basis_dim]
 
     return vec.to(device)
@@ -50,20 +65,34 @@ def chebyshev_second_kind(lam, basis_dim, device='cpu'):
     vec = torch.tensor([eval_chebyu(i, lam) for i in range(basis_dim)], dtype=torch.float32)
     return vec.to(device)
 
+# def bivariate_chebyshev(hyper_params, basis_dim, device='cpu'):
+#     p = math.ceil(math.sqrt(2*basis_dim))
+
+#     vec = []
+#     for i in range(p):
+#         for j in range(i+1):
+#             bivariate = eval_chebyt(j, hyper_params[0]) * eval_chebyt(i-j, hyper_params[1])
+#             vec.append(bivariate)
+
+#     vec = torch.tensor(vec, dtype=torch.float32)[:basis_dim]
+#     return vec.to(device)
+    
 def bivariate_chebyshev(hyper_params, basis_dim, device='cpu'):
-    # Transform the lam to [-1, 1] interval
-    lam_transformed = [2 * hyper_params[0] - 1, 2.5*hyper_params[1] - 1.5]
-    p = math.ceil(math.sqrt(2*basis_dim))
+    p = round(math.sqrt(basis_dim))
 
     vec = []
     for i in range(p):
         for j in range(i+1):
-            bivariate = eval_chebyt(j, lam_transformed[0]) * eval_chebyt(i-j, lam_transformed[1])
+            # print(i, j)
+            bivariate = eval_chebyt(i, hyper_params[0]) * eval_chebyt(j, hyper_params[1])
             vec.append(bivariate)
-
+        for j in range(-i+1, 1):
+            # print(-j, i)
+            bivariate = eval_chebyt(-j, hyper_params[0]) * eval_chebyt(i, hyper_params[1])
+            vec.append(bivariate)
     vec = torch.tensor(vec, dtype=torch.float32)[:basis_dim]
     return vec.to(device)
-    
+
 # cubic bspline basis
 class SplineBasis:
     def __init__(self, knots, order):

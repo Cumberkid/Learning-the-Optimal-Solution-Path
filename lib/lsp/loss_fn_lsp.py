@@ -1,8 +1,10 @@
 import torch
 
 def unif_reg_logit(lam, X, y, model, device='cpu'):
+    # Transform the lam to [-1, 1] interval
+    lam_transformed = 2 * lam - 1
     # Compute predicted y_hat
-    theta = model(lam, device)
+    theta = model(lam_transformed, device)
     
     if model.intercept:
         pred = torch.mm(X, theta[1:].view(-1, 1))
@@ -40,8 +42,10 @@ def unif_weighted_logit(lam, X, y, model, device='cpu'):
     X_minor = X[y == 0]
     y_minor = y[y == 0]
 
+    # Transform the lam to [-1, 1] interval
+    lam_transformed = 2 * lam - 1
     # compute predicted y_hat
-    theta = model(lam, device)
+    theta = model(lam_transformed, device)
     # print(theta[0])
     
     if model.intercept:
@@ -106,8 +110,10 @@ def reg_unif_weighted_logit(lam, X, y, model, device="cpu"):
     X_minor = X[y == 0]
     y_minor = y[y == 0]
 
+    # Transform the lam to [-1, 1] interval
+    lam_transformed = 2 * lam - 1
     # compute predicted y_hat
-    theta = model(lam, device)
+    theta = model(lam_transformed, device)
     # print(theta[0])
     
     if model.intercept:
@@ -164,24 +170,26 @@ def reg_exp_weighted_logit(lam, X, y, model, device="cpu"):
 
     return loss
 
-# # balance expected return, risk, and diversification
-# # constraint is that sum of model weight should be 1. We achieve this by setting the first term of weight
-# # to equal (1- sum of remaining terms of weight)
-# def allocation_cost(hyper_params, decomp_cov, mean, model, device="cpu"):
-#     # compute predicted y_hat
-#     n = decomp_cov.shape[1]
-#     theta = model(hyper_params, device)
-#     # first_column = decomp_cov[:, 0].unsqueeze(1)
-#     risk = torch.mm(decomp_cov, theta.view(-1, 1))
-#     exp_rtrn = torch.mm(mean.view(-1, 1).T, theta.view(-1, 1))
-#     # a proximity smoothing on 1-norm    
-#     mu = .01
-#     cost = torch.sum(torch.sqrt(theta**2 + mu**2) - mu)
+# balance expected return, risk, and diversification
+# constraint is that sum of model weight should be 1. We achieve this by setting the first term of weight
+# to equal (1- sum of remaining terms of weight)
+def allocation_cost_no_con(hyper_params, decomp_cov, mean, model, device="cpu"):
+    # compute predicted y_hat
+    n = decomp_cov.shape[1]
+    # Transform the lam to [-1, 1] interval
+    lam_transformed = [2 * hyper_params[0] - 1, 2.5*hyper_params[1] - 1.5]
+    theta = model(lam_transformed, device)
+    # first_column = decomp_cov[:, 0].unsqueeze(1)
+    risk = torch.mm(decomp_cov, theta.view(-1, 1))
+    exp_rtrn = torch.mm(mean.view(-1, 1).T, theta.view(-1, 1))
+    # a proximity smoothing on 1-norm    
+    mu = .01
+    cost = torch.sum(torch.sqrt(theta**2 + mu**2) - mu)
 
-#     # input hyperparameter lam is a 2-d array
-#     loss = hyper_params[0] * risk.norm(p=2)**2 - hyper_params[1] * exp_rtrn + cost
+    # input hyperparameter lam is a 2-d array
+    loss = hyper_params[0] * risk.norm(p=2)**2 - hyper_params[1] * exp_rtrn + cost
 
-#     return loss
+    return loss
 
 # balance expected return, risk, and diversification
 # constraint is that sum of model weight should be 1. We achieve this by setting the first term of weight
@@ -189,7 +197,9 @@ def reg_exp_weighted_logit(lam, X, y, model, device="cpu"):
 def allocation_cost(hyper_params, decomp_cov, mean, model, device="cpu"):
     # compute predicted y_hat
     n = decomp_cov.shape[1]
-    theta = model(hyper_params, device)
+    # Transform the lam to [-1, 1] interval
+    lam_transformed = [2 * hyper_params[0] - 1, 2.5*hyper_params[1] - 1.5]
+    theta = model(lam_transformed, device)
     first_column = decomp_cov[:, 0].unsqueeze(1)
     risk = torch.mm(decomp_cov[:, 1:] - first_column.repeat(1, n - 1), theta.view(-1, 1)) + first_column
     exp_rtrn = torch.mm(mean[1:].view(-1, 1).T - mean[0].repeat(1, n - 1), theta.view(-1, 1)) + mean[0]
