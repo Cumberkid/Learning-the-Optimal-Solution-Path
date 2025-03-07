@@ -1,6 +1,8 @@
 import numpy as np
 from lib.lsp.solver_lsp import test_lsp
 
+
+
 # return a list of loss computed on a specified grid over the solution path
 def get_losses_lsp(lam_min, lam_max, num_grid, model, data_loader, loss_fn, device='cpu'):
     lambdas = np.linspace(lam_max, lam_min, num_grid)
@@ -67,3 +69,4 @@ def get_errs_lsp_2d(lam_min, lam_max, true_loss_list, model, data_loader, loss_f
 def get_sup_error_lsp_2d(lam_min, lam_max, true_loss_list, model, data_loader, loss_fn, device='cpu'):
     errs_2d = get_errs_lsp_2d(lam_min, lam_max, true_loss_list, model, data_loader, loss_fn, device)
     return np.max(np.array(errs_2d))
+

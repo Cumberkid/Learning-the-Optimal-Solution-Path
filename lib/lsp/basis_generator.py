@@ -2,7 +2,7 @@ import torch
 import math
 import numpy as np
 from scipy.interpolate import BSpline
-from scipy.special import legendre, eval_laguerre, eval_chebyu, eval_chebyt
+from scipy.special import eval_legendre, eval_laguerre, eval_chebyu, eval_chebyt, eval_jacobi
 from numpy.polynomial.chebyshev import chebgrid2d
 
 # monomials
@@ -12,7 +12,7 @@ def monomials(lam, basis_dim, device='cpu'):
     
 # scaled and shifted Legendre polynomials
 def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
-    vec = torch.tensor([math.sqrt(2*i+1) * legendre(i)(lam) for i in range(basis_dim)], dtype=torch.float32)
+    vec = torch.tensor([math.sqrt(2*i+1) * eval_legendre(i, lam) for i in range(basis_dim)], dtype=torch.float32)
     return vec.to(device)
 
 # # bivariate Legendre polynomials
@@ -22,7 +22,7 @@ def scaled_shifted_legendre(lam, basis_dim, device='cpu'):
 #     vec = []
 #     for i in range(p):
 #         for j in range(i+1):
-#             bivariate = legendre(j)(hyper_params[0]) * legendre(i-j)(hyper_params[1])
+#             bivariate = eval_legendre(j, hyper_params[0]) * eval_legendre(i-j, hyper_params[1])
 #             vec.append(bivariate)
 
 #     vec = torch.tensor(vec, dtype=torch.float32)[:basis_dim]
@@ -38,11 +38,11 @@ def bivariate_legendre(hyper_params, basis_dim, device='cpu'):
     for i in range(p):
         for j in range(i+1):
             # print(i, j)
-            bivariate = legendre(i)(hyper_params[0]) * legendre(j)(hyper_params[1])
+            bivariate = eval_legendre(i, hyper_params[0]) * eval_legendre(j, hyper_params[1])
             vec.append(bivariate)
         for j in range(-i+1, 1):
             # print(-j, i)
-            bivariate = legendre(-j)(hyper_params[0]) * legendre(i)(hyper_params[1])
+            bivariate = eval_legendre(-j, hyper_params[0]) * eval_legendre(i, hyper_params[1])
             vec.append(bivariate)
     vec = torch.tensor(vec, dtype=torch.float32)[:basis_dim]
 
@@ -59,6 +59,13 @@ def dampen_laguerre(lam, basis_dim, device='cpu'):
             vec.append((np.sqrt(10) * np.exp(-0.45 * lam) * eval_laguerre(i, lam)))
     vec = torch.tensor(vec, dtype=torch.float32)
     return vec.to(device)
+
+# Jacobi polynomials: a higher-order function that takes input alpha_beta and return
+def customized_jacobi(alpha_beta):
+    def jacobi(lam, basis_dim, device='cpu'):
+        vec = torch.tensor([eval_jacobi(i, alpha_beta[0], alpha_beta[1], lam) for i in range(basis_dim)], dtype=torch.float32)
+        return vec.to(device)
+    return jacobi
 
 # chebyshev polynomial of the second kind
 def chebyshev_second_kind(lam, basis_dim, device='cpu'):
