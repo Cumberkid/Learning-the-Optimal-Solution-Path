@@ -13,7 +13,6 @@ We compare LSP with a naive grid search method.
 - `lib` contains all of the files needed to run LSP and naive grid search.
 - `data` contains data files concerning the experiments in the paper, including both input datasets and results.
 - `notebooks` contain all scripts and outputs for the experiments.
-- 
 
 ## Experiments
 
@@ -31,11 +30,13 @@ We carry out two sets of experiments: `reweighted-logistic-regression` and `port
  
     
   
-* `portfolio-allocation` runs a portfolio allocation problem: $\min_\theta \lambda_1\theta^\top Q \theta - \lambda_2 \mu^\top \theta + \sum_i (\theta_i^2 + .01^2)^{1/2} - .01$ under the constraint that $\sum_i \theta = 1$, where $Q$ is the covariance matrix of the `10_Industry_Portfolios_10_Year_Monthly.csv` dataset, and $mu$ is the expected return of the same dataset. 
+* `portfolio-allocation` runs a portfolio allocation problem: $\min_\theta \lambda_1\theta^\top \Sigma \theta - \lambda_2 \mu^\top \theta + \sum_i (\theta_i^2 + .01^2)^{1/2} - .01$, where $\Sigma$ is the covariance matrix of the `10_Industry_Portfolios_10_Year_Monthly.csv` dataset, and $\mu$ is the expected return of the same dataset. 
 
   - We use a bivariate Legendre polynomial basis for LSP.
  
   - The loss function runs on a 2 hyperparameters (2-d).
+ 
+  - The `high-dimension` folder contains a variation of the portfolio allocation problem that considers the objective $ h(\theta, \lambda) =  -\lambda_1 \cdot \mu^\top \theta + \lambda_2 \cdot \theta^\top \Sigma \theta + \|\theta -\lambda_{3:12}\|_2^2$, so that the hyperparameter $\lambda$ is 12-dimensional.
     
   - The `data/portfolio-allocation` folder contains the dataset `10_Industry_Portfolios_10_Year_Monthly.csv`, `decomp_cov.csv` and `mean.csv` used for this experiment. `decomp_cov.csv` and `mean.csv` are the covariance matrix and expected return computed beforehand.
 
