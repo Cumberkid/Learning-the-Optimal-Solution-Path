@@ -20,7 +20,7 @@ We carry out two sets of experiments: `reweighted-logistic-regression` and `port
 
 * `reweighted-logistic-regression` runs a reweighted logistic regression on the highly imbalanced [law school admission Bar passage dataset](https://www.kaggle.com/datasets/danofer/law-school-admissions-bar-passage?resource=download)
    
-  - We use two kinds of polynomial bases for LSP: Lagurre polynomials and Legendre polynomials. The results are contained in `reweighted-logistic-regression/laguerre` and `reweighted-logistic-regression/legendre` folders respectively.
+  - We use two kinds of polynomial bases for LSP: Legendre polynomials and Jacobi polynomilas. The results are contained in `reweighted-logistic-regression/laguerre` and `reweighted-logistic-regression/legendre` folders respectively.
 
   - The loss function runs on a single hyperparameter (1-d).
       
@@ -34,7 +34,7 @@ We carry out two sets of experiments: `reweighted-logistic-regression` and `port
 
   - We use a bivariate Legendre polynomial basis for LSP.
  
-  - The loss function runs on a 2 hyperparameters (2-d).
+  - The loss function runs on 2 hyperparameters (2-d).
  
   - The `high-dimension` folder contains a variation of the portfolio allocation problem that considers the objective $ h(\theta, \lambda) =  -\lambda_1 \cdot \mu^\top \theta + \lambda_2 \cdot \theta^\top \Sigma \theta + \|\theta -\lambda_{3:12}\|_2^2$, so that the hyperparameter $\lambda$ is 12-dimensional.
     
