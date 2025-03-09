@@ -1,6 +1,6 @@
 # Learning-the-Optimal-Solution-Path (LSP)
 
-Code associated with the paper "Beyond DescretizationL Learning the Optimal Solution Path".
+Code associated with the paper "Beyond Discretization: Learning the Optimal Solution Path".
 
 LSP is an overall framework for learning the whole solution path for a family of hyperparametrized optimization problems. 
 
@@ -20,7 +20,7 @@ We carry out two sets of experiments: `reweighted-logistic-regression` and `port
 
 * `reweighted-logistic-regression` runs a reweighted logistic regression on the highly imbalanced [law school admission Bar passage dataset](https://www.kaggle.com/datasets/danofer/law-school-admissions-bar-passage?resource=download)
    
-  - We use two kinds of polynomial bases for LSP: Legendre polynomials and Jacobi polynomilas. The results are contained in `reweighted-logistic-regression/laguerre` and `reweighted-logistic-regression/legendre` folders respectively.
+  - We use two kinds of polynomial bases for LSP: Legendre polynomials and Jacobi polynomials. The results are contained in `reweighted-logistic-regression/laguerre` and `reweighted-logistic-regression/legendre` folders respectively.
 
   - The loss function runs on a single hyperparameter (1-d).
       
