@@ -36,7 +36,7 @@ We carry out two sets of experiments: `reweighted-logistic-regression` and `port
  
   - The loss function runs on 2 hyperparameters (2-d).
  
-  - The `high-dimension` folder contains a variation of the portfolio allocation problem that considers the objective $ h(\theta, \lambda) =  -\lambda_1 \cdot \mu^\top \theta + \lambda_2 \cdot \theta^\top \Sigma \theta + \|\theta -\lambda_{3:12}\|_2^2$, so that the hyperparameter $\lambda$ is 12-dimensional.
+  - The `high-dimension` folder contains a variation of the portfolio allocation problem that considers the objective $h(\theta, \lambda) =  -\lambda_1 \cdot \mu^\top \theta + \lambda_2 \cdot \theta^\top \Sigma \theta + \|\theta -\lambda_{3:12}\|_2^2$, so that the hyperparameter $\lambda$ is 12-dimensional.
     
   - The `data/portfolio-allocation` folder contains the dataset `10_Industry_Portfolios_10_Year_Monthly.csv`, `decomp_cov.csv` and `mean.csv` used for this experiment. `decomp_cov.csv` and `mean.csv` are the covariance matrix and expected return computed beforehand.
 
